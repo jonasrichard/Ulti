@@ -1,0 +1,6 @@
+
+main(_Args) ->
+  file:set_cwd("src"),
+  make:all([debug_info, {i, "../include"}, {outdir, "../ebin"}]),
+  file:copy("echo_server.app", "../ebin/echo_server.app").
+
