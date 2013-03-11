@@ -7,7 +7,7 @@
 
 start(Name, Port) ->
   % Start listening
-  case gen_tcp:listen(Port, [binary, {active, false}, {keepalive, true}]) of
+  case gen_tcp:listen(Port, [binary, {active, once}, {reuseaddr, true}, {packet, 0}]) of
     {ok, Socket} ->
       Pid = spawn(fun() -> loop(Socket) end),
       register(Name, Pid),
@@ -25,11 +25,8 @@ loop(ListenSocket) ->
   case gen_tcp:accept(ListenSocket, 100) of
     {ok, Socket} ->
       io:format("Incoming connection"),
-      %Pid = spawn(fun() -> echo_receiver:start(Socket) end),
-      %gen_tcp:controlling_process(Socket, Pid);
-      {ok, Packet} = gen_tcp:recv(Socket, 0),
-      io:format("Recv ~p~n", [Packet]),
-      gen_tcp:close(Socket);
+      Pid = echo_receiver:start(Socket),
+      gen_tcp:controlling_process(Socket, Pid);
     {error, timeout} ->
       ok;
     {error, Reason} ->
