@@ -3,7 +3,7 @@
 -author("Richard_Jonas").
 
 %% API
--export([deal/0, sort/1]).
+-export([deal/0, sort/1, compute_game_money/1]).
 
 deal() ->
   deal([], [], [], generate_cards()).
@@ -66,3 +66,43 @@ compare_cards({Color1, Value1}, {Color2, Value2}) ->
 
 sort(Cards) ->
   lists:sort(fun compare_cards/2, Cards).
+
+compute_game_money([]) ->
+  0;
+compute_game_money([H|T]) ->
+  compute_game_money(H) + compute_game_money(T);
+compute_game_money({passz}) ->
+  10;
+compute_game_money({passz, piros}) ->
+  20;
+compute_game_money({ulti}) ->
+  40;
+compute_game_money({ulti, piros}) ->
+  80;
+compute_game_money({negyven_szaz}) ->
+  40;
+compute_game_money({negyven_szaz, piros}) ->
+  80;
+compute_game_money({husz_szaz}) ->
+  80;
+compute_game_money({husz_szaz, piros}) ->
+  160;
+compute_game_money({betli}) ->
+  50;
+compute_game_money({betli, piros}) ->
+  100;
+compute_game_money({durtmars}) ->
+  60;
+compute_game_money({durtmars, piros}) ->
+  60;
+compute_game_money({szinnelkuli_durtmars}) ->
+  120;
+compute_game_money({teritett_durtmars}) ->
+  120;
+compute_game_money({teritett_durtmars, piros}) ->
+  240;
+compute_game_money({teritett_szinnelkuli_durtmars}) ->
+  240;
+compute_game_money({teritett_betli}) ->
+  200.
+
