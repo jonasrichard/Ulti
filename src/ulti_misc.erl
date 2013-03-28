@@ -3,7 +3,8 @@
 -author("Richard_Jonas").
 
 %% API
--export([deal/0, sort/1]).
+-export([deal/0, sort/1,
+  which_player_take/2, value_to_number/1]).
 
 deal() ->
   deal([], [], [], generate_cards()).
@@ -66,3 +67,18 @@ compare_cards({Color1, Value1}, {Color2, Value2}) ->
 
 sort(Cards) ->
   lists:sort(fun compare_cards/2, Cards).
+
+%%
+%% Gives which card hit the cards on the table
+%%
+which_player_take([Card1, Card2, Card3], BeatFun) ->
+  which_player_take(Card1, [Card2, Card3], BeatFun).
+which_player_take(Card, [], _BeatFun) ->
+  Card;
+which_player_take({N, Card}, [{No, OtherCard} | T], BeanFun) ->
+  case BeanFun(Card, OtherCard) of
+    true ->
+      which_player_take({N, Card}, T, BeanFun);
+    _ ->
+      which_player_take({No, OtherCard}, T, BeanFun)
+  end.
