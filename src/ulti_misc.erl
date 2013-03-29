@@ -2,8 +2,11 @@
 -module(ulti_misc).
 -author("Richard_Jonas").
 
+-include("ulti_game.hrl").
+
 %% API
--export([deal/0, sort/1, compute_game_money/1]).
+-export([deal/0, sort/1,
+  which_player_take/2, value_to_number/1]).
 
 deal() ->
   deal([], [], [], generate_cards()).
@@ -67,42 +70,73 @@ compare_cards({Color1, Value1}, {Color2, Value2}) ->
 sort(Cards) ->
   lists:sort(fun compare_cards/2, Cards).
 
-compute_game_money([]) ->
-  0;
-compute_game_money([H|T]) ->
-  compute_game_money(H) + compute_game_money(T);
-compute_game_money({passz}) ->
-  10;
-compute_game_money({passz, piros}) ->
-  20;
-compute_game_money({ulti}) ->
-  40;
-compute_game_money({ulti, piros}) ->
-  80;
-compute_game_money({negyven_szaz}) ->
-  40;
-compute_game_money({negyven_szaz, piros}) ->
-  80;
-compute_game_money({husz_szaz}) ->
-  80;
-compute_game_money({husz_szaz, piros}) ->
-  160;
-compute_game_money({betli}) ->
-  50;
-compute_game_money({betli, piros}) ->
-  100;
-compute_game_money({durtmars}) ->
-  60;
-compute_game_money({durtmars, piros}) ->
-  60;
-compute_game_money({szinnelkuli_durtmars}) ->
-  120;
-compute_game_money({teritett_durtmars}) ->
-  120;
-compute_game_money({teritett_durtmars, piros}) ->
-  240;
-compute_game_money({teritett_szinnelkuli_durtmars}) ->
-  240;
-compute_game_money({teritett_betli}) ->
-  200.
+%%
+%% Gives which card hit the cards on the table
+%%
+which_player_take([Card1, Card2, Card3], BeatFun) ->
+  which_player_take(Card1, [Card2, Card3], BeatFun).
+which_player_take(Card, [], _BeatFun) ->
+  Card;
+which_player_take({N, Card}, [{No, OtherCard} | T], BeanFun) ->
+  case BeanFun(Card, OtherCard) of
+    true ->
+      which_player_take({N, Card}, T, BeanFun);
+    _ ->
+      which_player_take({No, OtherCard}, T, BeanFun)
+  end.
 
+%%
+%% Validate game combinations
+%%
+is_valid_game({Color, Games} = Game) ->
+  (Color == undefined orelse color_to_number(Color))
+    andalso
+  (is_valid_simple_game(Games) orelse (length(Games) > 0 andalso is_valid_combined_game(Games)))
+    andalso
+  case Game of
+    {piros, [husz_szaz]} -> false;
+    _ -> true
+  end.
+
+is_valid_simple_game([passz]) ->
+  true;
+is_valid_simple_game([betli]) ->
+  true;
+is_valid_simple_game([rebetli]) ->
+  true;
+is_valid_simple_game([teritett_betli]) ->
+  true;
+is_valid_simple_game([szintelen_durchmars]) ->
+  true;
+is_valid_simple_game([redurchmars]) ->
+  true;
+is_valid_simple_game([teritett_szintelen_durchmars]) ->
+  true;
+is_valid_simple_game(_) ->
+  false.
+
+is_valid_combined_game([]) ->
+  false;
+is_valid_combined_game([Game|T] = Games) ->
+  lists:all(fun(G) -> not is_valid_simple_game([G]) end, Games)
+    andalso
+  case lists:member(negy_asz, Games) of
+    false ->
+      true;
+    _ ->
+      lists:all(fun(G) -> G /= durchmars or G /= teritett_durchmars end, Games)
+  end
+    andalso
+  case lists:member(negyven_szaz, Games) of
+    false ->
+      true;
+    _ ->
+      not lists:member(husz_szaz, Games)
+  end
+    andalso
+  case lists:member(husz_szaz, Games) of
+    false ->
+      true;
+    _ ->
+      not lists:member(negyven_szaz, Games)
+  end.
