@@ -124,7 +124,8 @@ is_valid_combined_game([Game|T] = Games) ->
     false ->
       true;
     _ ->
-      lists:all(fun(G) -> G /= durchmars or G /= teritett_durchmars end, Games)
+      %%lists:all(fun(G) -> G /= durchmars or G /= teritett_durchmars end, Games)
+      error
   end
     andalso
   case lists:member(negyven_szaz, Games) of

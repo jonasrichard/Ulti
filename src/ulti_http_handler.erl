@@ -1,6 +1,7 @@
 %% Copyright
 -module(ulti_http_handler).
 -author("richard").
+-behaviour(cowboy_http_handler).
 
 %% API
 -export([init/3, handle/2, terminate/3]).
