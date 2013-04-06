@@ -15,16 +15,26 @@
 
 %% API
 -export([
+  start_game/1,
   init/1, wait_players_card/2,
   beats/2
 ]).
 
+start_game(Users) ->
+  Players = list_to_tuple([Pid || {_PlayerName, Pid} <- Users]),
+  {H1, H2, H3} = ulti_misc:deal(),
+  [E1, E2 | H11] = H1,
+  error_logger:info_msg("Starting game ~n~p~n~p~n~p~n", [H11, H2, H3]),
+  gen_fsm:start(ulti_play, [Players, {H11, H2, H3}, [E1, E2]], []).
+
 init([Players, Hands, Extra]) ->
+  [P ! {cards, self(), H} || {P, H} <- lists:zip(Players, tuple_to_list(Hands))],
+
   {ok, wait_players_card, #state{players = Players, hands = Hands,
     extra = Extra, player_no = 1, table = [], takes = {[], [], []}}}.
 
 wait_players_card({put, Card}, State) ->
-  {_, _, Hands, _, Table, Takes, No} = State,
+  {Players, _, Hands, _, Table, Takes, No} = State,
 
   Hand = element(No, Hands),
 
@@ -39,6 +49,8 @@ wait_players_card({put, Card}, State) ->
 
   %% delete Card
   NewHand = lists:delete(Card, Hand),
+
+  element(No, Players) ! {cards, NewHand},
 
   %% add to the table
   NewTable = Table ++ [{No, Card}],
