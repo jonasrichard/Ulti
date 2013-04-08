@@ -6,7 +6,17 @@
     <script type="text/javascript">
         var socket = new WebSocket("ws://localhost:8080/ws");
 
-        socket.onmessage = function(evt) { $("#result").html(evt.data); };
+        socket.onmessage = function(evt) {
+            console.log(evt.data);
+            $("#result").html(evt.data);
+
+            var $cmd = evt.data.split(':');
+            switch ($cmd[0].trim()) {
+                case 'cards':
+                    drawCards($cmd[1].trim());
+                    break;
+            }
+        };
 
         socket.onerror = function(evt) { $("#result").html("Error: " + evt.data); };
 
@@ -16,6 +26,60 @@
 
         function sendCommand() {
             socket.send($("#command").val());
+        }
+
+        function drawCards(cards) {
+            var $params = cards.split(' ');
+            $("#cards").empty();
+
+            $($params).each(function(index, val) {
+                var $card = $('<div/>');
+                $card.attr('id', 'card' + index);
+                $card.css({
+                    'width': 96,
+                    'height': 150,
+                    'position': 'absolute',
+                    'top': 60,
+                    'left': 60 + index * 110,
+                    'background': 'url("huncards.jpg")',
+                    'background-repeat': 'no-repeat'});
+
+                var $c = val.split('_');
+                var $y = 0;
+                switch ($c[0]) {
+                    case 'piros': $y = 0; break;
+                    case 'tok'  : $y = -1; break;
+                    case 'zold' : $y = -2; break;
+                    case 'makk' : $y = -3; break;
+                }
+
+                var $x = 0;
+                switch ($c[1]) {
+                    case 'asz'   : $x = 0; break;
+                    case 'kiraly': $x = -1; break;
+                    case 'felso' : $x = -2; break;
+                    case 'also'  : $x = -3; break;
+                    case '10'    : $x = -4; break;
+                    case '9'     : $x = -5; break;
+                    case '8'     : $x = -6; break;
+                    case '7'     : $x = -7; break;
+                }
+
+                $card.css('background-position', ($x * 96) + "px " + ($y * 150) + "px");
+
+                $card.data('card', val);
+
+                $card.dblclick(function() {
+                    var $id = $(this).attr('id');
+                    var $c = $(this).data('card');
+
+                    console.log("put " + $c);
+                    socket.send("put " + $c);
+                    $(this).css('display', 'none');
+                });
+
+                $("#cards").append($card);
+            });
         }
     </script>
 </head>
@@ -27,6 +91,8 @@
 </form>
 
 <div id="result"></div>
+
+<div id="cards"></div>
 
 </body>
 </html>

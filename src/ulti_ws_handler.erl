@@ -8,7 +8,7 @@
 %% API
 -export([init/3, websocket_init/3, websocket_handle/3, websocket_info/3, websocket_terminate/3]).
 
--export([convert_card_test/0]).
+-export([convert_card_test/0, convert_hand_test/0]).
 
 init({tcp, http}, _Req, _Opts) ->
   {upgrade, protocol, cowboy_websocket}.
@@ -44,9 +44,9 @@ websocket_handle(_Data, Req, State) ->
 websocket_info(Msg, Req, State) ->
   case Msg of
     {init, GamePid, Hand} ->
-      {reply, {text, io_lib:format("cards ~p", [Hand])}, Req, State#state{game_pid = GamePid}};
+      {reply, {text, io_lib:format("cards: ~s", [convert_hand(Hand)])}, Req, State#state{game_pid = GamePid}};
     {cards, Hand} ->
-      {reply, {text, io_lib:format("cards ~p", [Hand])}, Req, State};
+      {reply, {text, io_lib:format("cards: ~s", [convert_hand(Hand)])}, Req, State};
     _ ->
       {ok, Req, State}
   end.
@@ -75,6 +75,16 @@ convert_card(CardMsg) ->
     end,
   {binary_to_atom(C, latin1), N2}.
 
+convert_hand(Hand) ->
+  list_to_binary([[
+    atom_to_list(C),
+    "_",
+    case N of
+      Na when is_atom(N) -> atom_to_list(Na);
+      Nn when is_number(N) -> integer_to_list(Nn)
+    end,
+    " "] || {C, N} <- Hand]).
+
 %%
 %%   Tests
 %%
@@ -82,3 +92,6 @@ convert_card(CardMsg) ->
 convert_card_test() ->
   {tok, 7} = convert_card(<<"tok_7">>),
   {piros, also} = convert_card(<<"piros_also">>).
+
+convert_hand_test() ->
+  <<"tok_asz makk_10 ">> = convert_hand([{tok, asz}, {makk, 10}]).
