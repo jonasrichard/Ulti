@@ -4,7 +4,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, join/2,
+-export([start_link/0, join/2, leave/1,
          init/1, handle_call/3, terminate/2]).
 
 start_link() ->
@@ -13,11 +13,15 @@ start_link() ->
 join(RoomId, UserName) ->
   gen_server:call(?MODULE, {join_room, RoomId, UserName}).
 
+leave(RoomId) ->
+  gen_server:call(?MODULE, {leave_room, RoomId}).
+
 init(_Args) ->
   ets:new(room, [public, ordered_set, named_table]),
   {ok, undefined}.
 
 handle_call({join_room, RoomId, UserName}, {Pid, _Tag}, State) ->
+  error_logger:info_msg("User ~p is joining to room ~p~n", [UserName, RoomId]),
   case ets:lookup(room, RoomId) of
     [] ->
       ets:insert(room, {RoomId, [{UserName, Pid}]}),

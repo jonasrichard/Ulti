@@ -8,6 +8,8 @@
 %% API
 -export([init/3, websocket_init/3, websocket_handle/3, websocket_info/3, websocket_terminate/3]).
 
+-export([convert_card_test/0]).
+
 init({tcp, http}, _Req, _Opts) ->
   {upgrade, protocol, cowboy_websocket}.
 
@@ -22,7 +24,7 @@ websocket_handle({text, Msg}, Req, State) ->
     [<<"join">>, Room] ->
       case catch list_to_integer(binary_to_list(Room)) of
         RoomId when is_integer(RoomId) ->
-          case gen_server:call(ulti_room_server, {join_room, RoomId, State#state.player_name}) of
+          case ulti_room_server:join(RoomId, State#state.player_name) of
             joined ->
               {reply, {text, <<"joined">>}, Req, State#state{room_id = RoomId}};
             room_is_full ->
@@ -32,8 +34,7 @@ websocket_handle({text, Msg}, Req, State) ->
           {reply, {text, <<"error Invalid room id, must be a number ", Room/binary>>}, Req, State}
       end;
     [<<"put">>, CardMsg] ->
-      [Color, Number] = binary:split(CardMsg, <<"_">>),
-      Card = {binary_to_atom(Color, latin1), binary_to_atom(Number, latin1)},
+      Card = convert_card(CardMsg),
       gen_fsm:send_event(State#state.game_pid, {put, Card}),
       {ok, Req, State}
   end;
@@ -42,15 +43,17 @@ websocket_handle(_Data, Req, State) ->
 
 websocket_info(Msg, Req, State) ->
   case Msg of
-    {cards, GamePid, Hand} ->
+    {init, GamePid, Hand} ->
       {reply, {text, io_lib:format("cards ~p", [Hand])}, Req, State#state{game_pid = GamePid}};
+    {cards, Hand} ->
+      {reply, {text, io_lib:format("cards ~p", [Hand])}, Req, State};
     _ ->
       {ok, Req, State}
   end.
 
 websocket_terminate(_Reason, _Req, State) ->
   error_logger:info_msg("User ~p leaving the room ~p~n", [State#state.player_name, State#state.room_id]),
-  gen_server:call(ulti_room_server, {leave, self()}),
+  ulti_room_server:leave(State#state.room_id),
   ok.
 
 -spec parse_command(Command) -> Words when
@@ -58,3 +61,24 @@ websocket_terminate(_Reason, _Req, State) ->
   Words    :: [binary()].
 parse_command(Command) ->
   [Word || Word <- binary:split(Command, <<32>>, [global, trim]), byte_size(Word) > 0].
+
+convert_card(CardMsg) ->
+  [C, N] = binary:split(CardMsg, <<"_">>),
+  N2 =
+    case N of
+      <<"also">> -> 'also';
+      <<"felso">> -> 'felso';
+      <<"kiraly">> -> 'kiraly';
+      <<"asz">> -> 'asz';
+      _ ->
+        list_to_integer(binary_to_list(N))
+    end,
+  {binary_to_atom(C, latin1), N2}.
+
+%%
+%%   Tests
+%%
+
+convert_card_test() ->
+  {tok, 7} = convert_card(<<"tok_7">>),
+  {piros, also} = convert_card(<<"piros_also">>).

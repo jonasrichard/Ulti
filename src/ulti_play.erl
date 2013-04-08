@@ -28,13 +28,13 @@ start_game(Users) ->
   gen_fsm:start(ulti_play, [Players, {H11, H2, H3}, [E1, E2]], []).
 
 init([Players, Hands, Extra]) ->
-  [P ! {cards, self(), H} || {P, H} <- lists:zip(Players, tuple_to_list(Hands))],
+  [P ! {init, self(), H} || {P, H} <- lists:zip(tuple_to_list(Players), tuple_to_list(Hands))],
 
   {ok, wait_players_card, #state{players = Players, hands = Hands,
     extra = Extra, player_no = 1, table = [], takes = {[], [], []}}}.
 
 wait_players_card({put, Card}, State) ->
-  {Players, _, Hands, _, Table, Takes, No} = State,
+  {state, Players, Hands, _, Table, Takes, No} = State,
 
   Hand = element(No, Hands),
 
