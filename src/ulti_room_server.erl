@@ -18,12 +18,17 @@ stop() ->
 start_link() ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+-spec join(number(), string()) -> any().
 join(RoomId, UserName) ->
   gen_server:call(?MODULE, {join_room, RoomId, UserName}).
 
+-spec leave(number()) -> any().
 leave(RoomId) ->
   gen_server:call(?MODULE, {leave_room, RoomId}).
 
+-spec get_players(number()) -> [{UserName, Pid}] when
+  UserName  :: string(),
+  Pid       :: pid().
 get_players(RoomId) ->
   gen_server:call(?MODULE, {get_players, RoomId}).
 

@@ -16,10 +16,11 @@
 %% API
 -export([
   start_game/1,
-  init/1, wait_players_card/2,
+  init/1, wait_players_card/2, terminate/3,
   beats/2
 ]).
 
+-spec start_game([{string(), pid()}]) -> any().
 start_game(Users) ->
   Players = list_to_tuple([Pid || {_PlayerName, Pid} <- Users]),
   {H1, H2, H3} = ulti_misc:deal(),
@@ -73,6 +74,11 @@ wait_players_card({put, Card}, State) ->
       }}
   end.
 
+terminate(normal, _, State) ->
+  %% evaluate game
+  ok;
+terminate(_, _, _) ->
+  ok.
 
 %%
 %% True if first card cannot be hit by the second one.
@@ -83,3 +89,9 @@ beats({Color1, Value1}, {Color2, Value2}) ->
   true ->
     false
   end.
+
+%%-spec put_card_from_hand(Card, Hands, PlayerNumber) -> NewHands when
+put_card_from_hand(Card, Hands, PlayerNumber) ->
+  Hand = element(PlayerNumber, Hands),
+  NewHand = lists:delete(Card, Hand),
+  setelement(PlayerNumber, Hands, NewHand).

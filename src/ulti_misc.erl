@@ -25,9 +25,11 @@ deal(First, Second, Third, Pack) when length(Pack) > 2 ->
 deal(First, Second, Third, Pack) ->
   {sort(First ++ Pack), sort(Second), sort(Third)}.
 
+-spec generate_cards() -> [card()].
 generate_cards() ->
   [{X,Y} || X <- [tok, makk, piros, zold], Y <- [7, 8, 9, also, felso, kiraly, 10, asz]].
 
+-spec color_to_number(color()) -> 1..4.
 color_to_number(tok) ->
   1;
 color_to_number(makk) ->
@@ -37,6 +39,7 @@ color_to_number(zold) ->
 color_to_number(piros) ->
   4.
 
+-spec value_to_number(face()) -> 1..8.
 value_to_number(7) ->
   1;
 value_to_number(8) ->
@@ -54,6 +57,7 @@ value_to_number(10) ->
 value_to_number(asz) ->
   8.
 
+-spec compare_cards(card(), card()) -> boolean().
 compare_cards({Color1, Value1}, {Color2, Value2}) ->
   N1 = color_to_number(Color1),
   N2 = color_to_number(Color2),
@@ -67,15 +71,19 @@ compare_cards({Color1, Value1}, {Color2, Value2}) ->
       end
   end.
 
+-spec sort([card()]) -> [card()].
 sort(Cards) ->
   lists:sort(fun compare_cards/2, Cards).
 
 %%
 %% Gives which card hit the cards on the table
 %%
+-spec which_player_take(ThreeCard, BeatFun) -> {number(), card()} when
+  ThreeCard  :: [card()],
+  BeatFun    :: fun((Card::card(), Other::card()) -> boolean()).
 which_player_take([Card1, Card2, Card3], BeatFun) ->
   which_player_take(Card1, [Card2, Card3], BeatFun).
-which_player_take(Card, [], _BeatFun) ->
+which_player_take({_N, _C} = Card, [], _BeatFun) ->
   Card;
 which_player_take({N, Card}, [{No, OtherCard} | T], BeanFun) ->
   case BeanFun(Card, OtherCard) of
