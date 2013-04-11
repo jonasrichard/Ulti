@@ -4,8 +4,16 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, join/2, leave/1,
-         init/1, handle_call/3, terminate/2]).
+-export([start/0, start_link/0, stop/0, join/2, leave/1, get_players/1]).
+-export([init/1, handle_call/3, handle_info/2, terminate/2]).
+
+start() ->
+  gen_server:start({local, ?MODULE}, ?MODULE, [], []).
+
+stop() ->
+  P = whereis(?MODULE),
+  unregister(?MODULE),
+  P ! stop.
 
 start_link() ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -15,6 +23,9 @@ join(RoomId, UserName) ->
 
 leave(RoomId) ->
   gen_server:call(?MODULE, {leave_room, RoomId}).
+
+get_players(RoomId) ->
+  gen_server:call(?MODULE, {get_players, RoomId}).
 
 init(_Args) ->
   ets:new(room, [public, ordered_set, named_table]),
@@ -46,7 +57,19 @@ handle_call({leave_room, RoomId}, {Pid, _Tag}, State) ->
       ets:insert(room, {RoomId, lists:keydelete(Pid, 2, Users)}),
       {reply, left_the_room, State}
   end;
+handle_call({get_players, RoomId}, _From, State) ->
+  case ets:lookup(room, RoomId) of
+    [] ->
+      {reply, [], State};
+    [{_, Users}] ->
+      {reply, Users, State}
+  end;
 handle_call(_, _, State) ->
+  {noreply, State}.
+
+handle_info(stop, State) ->
+  {stop, stopped, State};
+handle_info(_, State) ->
   {noreply, State}.
 
 terminate(_Reason, _State) ->

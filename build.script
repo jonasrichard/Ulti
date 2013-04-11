@@ -2,5 +2,7 @@
 main(_Args) ->
   file:set_cwd("src"),
   make:all([debug_info, {i, "../include"}, {i, "../deps/cowboy"}, {outdir, "../ebin"}]),
-  file:copy("ulti.app", "../ebin/ulti.app").
+  file:copy("ulti.app", "../ebin/ulti.app"),
+  file:set_cwd("../test"),
+  make:all([debug_info, {outdir, "../ebin/test"}]).
 
