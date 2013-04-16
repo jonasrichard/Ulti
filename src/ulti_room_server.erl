@@ -24,11 +24,14 @@ handle_call({join_room, RoomId, UserName}, {Pid, _Tag}, State) ->
   error_logger:info_msg("User ~p is joining to room ~p~n", [UserName, RoomId]),
   case ets:lookup(room, RoomId) of
     [] ->
-      ets:insert(room, {RoomId, [{UserName, Pid}]}),
+      Users = [{UserName, Pid}],
+      ets:insert(room, {RoomId, Users}),
+      notify_room_players(Users),
       {reply, joined, State};
     [{_, Users}] when length(Users) < 3 ->
       NewUsers = Users ++ [{UserName, Pid}],
       ets:insert(room, {RoomId, NewUsers}),
+      notify_room_players(NewUsers),
       if length(NewUsers) == 3 ->
         ulti_play:start_game(NewUsers);
       true ->
@@ -51,3 +54,10 @@ handle_call(_, _, State) ->
 
 terminate(_Reason, _State) ->
   ok.
+
+notify_room_players(Users) ->
+  Seq = lists:seq(1, length(Users)),
+  Names = [Name || {Name, _Pid} <- Users],
+  Room = [P || P <- lists:zip(Seq, Names)],
+
+  [Pid ! {room, Room} || {_Name, Pid} <- Users].

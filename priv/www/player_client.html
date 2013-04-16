@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <style type="text/css">
+    .face {
+        position: absolute;
+        width: 96;
+        height: 150;
+    }
+
+    .back {
+        position: absolute;
+        width: 96;
+        height: 150;
+        background: url("cardback.jpg");
+    }
+    </style>
     <title></title>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type="text/javascript">
@@ -28,6 +42,32 @@
             socket.send($("#command").val());
         }
 
+        function cardToCoord(card) {
+            var $c = card.split('_');
+
+            var $y = 0;
+            switch ($c[0]) {
+                case 'piros': $y = 0; break;
+                case 'tok'  : $y = -1; break;
+                case 'zold' : $y = -2; break;
+                case 'makk' : $y = -3; break;
+            }
+
+            var $x = 0;
+            switch ($c[1]) {
+                case 'asz'   : $x = 0; break;
+                case 'kiraly': $x = -1; break;
+                case 'felso' : $x = -2; break;
+                case 'also'  : $x = -3; break;
+                case '10'    : $x = -4; break;
+                case '9'     : $x = -5; break;
+                case '8'     : $x = -6; break;
+                case '7'     : $x = -7; break;
+            }
+
+            return [$x, $y];
+        }
+
         function drawCards(cards) {
             var $params = cards.split(' ');
             $("#cards").empty();
@@ -35,37 +75,18 @@
             $($params).each(function(index, val) {
                 var $card = $('<div/>');
                 $card.attr('id', 'card' + index);
+                $card.addClass('face');
+
+                var $coord = cardToCoord(val);
+
                 $card.css({
                     'width': 96,
                     'height': 150,
                     'position': 'absolute',
                     'top': 60,
                     'left': 60 + index * 110,
-                    'background': 'url("huncards.jpg")',
-                    'background-repeat': 'no-repeat'});
-
-                var $c = val.split('_');
-                var $y = 0;
-                switch ($c[0]) {
-                    case 'piros': $y = 0; break;
-                    case 'tok'  : $y = -1; break;
-                    case 'zold' : $y = -2; break;
-                    case 'makk' : $y = -3; break;
-                }
-
-                var $x = 0;
-                switch ($c[1]) {
-                    case 'asz'   : $x = 0; break;
-                    case 'kiraly': $x = -1; break;
-                    case 'felso' : $x = -2; break;
-                    case 'also'  : $x = -3; break;
-                    case '10'    : $x = -4; break;
-                    case '9'     : $x = -5; break;
-                    case '8'     : $x = -6; break;
-                    case '7'     : $x = -7; break;
-                }
-
-                $card.css('background-position', ($x * 96) + "px " + ($y * 150) + "px");
+                    'background': 'url("huncards.jpg") no-repeat scroll ' + ($coord[0] * 96) + 'px ' + ($coord[1] * 150) + 'px',
+                });
 
                 $card.data('card', val);
 
@@ -92,7 +113,13 @@
 
 <div id="result"></div>
 
-<div id="cards"></div>
+<div id="table">
+    <div id="player1" style="position: absolute; left: 50px; top: 40px">Player #1<br/>Piros negyvenszáz ulti durchmars</div>
+    <div id="player2" style="position: absolute; left: 650px; top: 40px">Player #2<br/>Piros negyvenszáz ulti durchmars</div>
+    <div id="player3" style="position: absolute; left: 200px; top: 450px">Player #3<br/>Piros negyvenszáz ulti durchmars</div>
+    <div id="cardplace" style="position: absolute; left: 430px; top: 330px; width: 30px; height: 30px; border: 1px solid black"></div>
+    <div id="cards"></div>
+</div>
 
 </body>
 </html>

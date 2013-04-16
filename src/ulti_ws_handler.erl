@@ -41,12 +41,23 @@ websocket_handle({text, Msg}, Req, State) ->
 websocket_handle(_Data, Req, State) ->
   {ok, Req, State}.
 
+%%
+%% Client can get the following type of messages
+%% - room 1, Joe, 2 Jack ...      the number of the player (can be 1, 2, 3)
+%% - hand ...                     the cards on the player's hand
+%% - other_hand 1 5               player 1 has 5 cards
+%% - put 2 tok_also               player 2 put tok also
+%% - take 3                       player 3 took the table's cards
+%% - result 2                     player 2 won
+%%
 websocket_info(Msg, Req, State) ->
   case Msg of
     {init, GamePid, Hand} ->
       {reply, {text, io_lib:format("cards: ~s", [convert_hand(Hand)])}, Req, State#state{game_pid = GamePid}};
     {cards, Hand} ->
       {reply, {text, io_lib:format("cards: ~s", [convert_hand(Hand)])}, Req, State};
+    {room, Users} ->
+      todo;
     _ ->
       {ok, Req, State}
   end.
