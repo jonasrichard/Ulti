@@ -51,7 +51,20 @@ wait_players_card({put, Card}, State) ->
   %% delete Card
   NewHand = lists:delete(Card, Hand),
 
-  element(No, Players) ! {cards, NewHand},
+  element(No, Players),
+
+  lists:zipwith(
+    fun(Num, Pid) ->
+      case Num of
+        No ->
+          Pid ! {hand, NewHand};
+        _ ->
+          Pid ! {other_hand, No, length(NewHand)},
+          Pid ! {put, No, Card}
+      end
+    end,
+    lists:seq(1, size(Players)),
+    tuple_to_list(Players)),
 
   %% add to the table
   NewTable = Table ++ [{No, Card}],
@@ -60,10 +73,14 @@ wait_players_card({put, Card}, State) ->
   case NewTable of
     _ when length(NewTable) == 3 ->
       {Taker, _} = ulti_misc:which_player_take(NewTable, fun beats/2),
+
+      %% Notify players
+      [Player ! {take, Taker} || Player <- tuple_to_list(Players)],
+
       {next_state, wait_players_card, State#state{
           hands = setelement(No, Hands, NewHand),
           table = [],
-          takes = setelement(Taker, Takes, lists:append(element(Taker, Takes), list_to_tuple(NewTable))),
+          takes = setelement(Taker, Takes, lists:append(element(Taker, Takes), [list_to_tuple(NewTable)])),
           player_no = Taker
       }};
     _ ->
@@ -95,3 +112,4 @@ put_card_from_hand(Card, Hands, PlayerNumber) ->
   Hand = element(PlayerNumber, Hands),
   NewHand = lists:delete(Card, Hand),
   setelement(PlayerNumber, Hands, NewHand).
+
