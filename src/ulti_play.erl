@@ -1,6 +1,7 @@
 %% Copyright
 -module(ulti_play).
 -author("richard").
+-include("ulti_game.hrl").
 
 -behaviour(gen_fsm).
 
@@ -29,7 +30,10 @@ start_game(Users) ->
   gen_fsm:start(ulti_play, [Players, {H11, H2, H3}, [E1, E2]], []).
 
 init([Players, Hands, Extra]) ->
-  [P ! {init, self(), H} || {P, H} <- lists:zip(tuple_to_list(Players), tuple_to_list(Hands))],
+  PlayerList = tuple_to_list(Players),
+  [P ! {init, self(), H} || {P, H} <- lists:zip(PlayerList, tuple_to_list(Hands))],
+
+  [P ! {start, 1} || P <- PlayerList],
 
   {ok, wait_players_card, #state{players = Players, hands = Hands,
     extra = Extra, player_no = 1, table = [], takes = {[], [], []}}}.
@@ -73,6 +77,7 @@ wait_players_card({put, Card}, State) ->
   case NewTable of
     _ when length(NewTable) == 3 ->
       {Taker, _} = ulti_misc:which_player_take(NewTable, fun beats/2),
+      error_logger:info_msg("Table: ~w take ~w~n", [NewTable, Taker]),
 
       %% Notify players
       [Player ! {take, Taker} || Player <- tuple_to_list(Players)],
@@ -100,6 +105,7 @@ terminate(_, _, _) ->
 %%
 %% True if first card cannot be hit by the second one.
 %%
+-spec beats(card(), card()) -> boolean().
 beats({Color1, Value1}, {Color2, Value2}) ->
   if Color1 == Color2 ->
     ulti_misc:value_to_number(Value1) > ulti_misc:value_to_number(Value2);

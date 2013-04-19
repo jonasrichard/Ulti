@@ -41,15 +41,17 @@ handle_call({join_room, RoomId, UserName}, {Pid, _Tag}, State) ->
   case ets:lookup(room, RoomId) of
     [] ->
       Users = [{UserName, Pid}],
+      Pid ! {joined, 1},                       %% this player is the first player
       ets:insert(room, {RoomId, Users}),
-      notify_room_players(Users),
+      notify_room_players(Users),              %% notify everybody about who are in the room
       {reply, joined, State};
     [{_, Users}] when length(Users) < 3 ->
       NewUsers = Users ++ [{UserName, Pid}],
+      Pid ! {joined, length(NewUsers)},        %% this player is the nth player
       ets:insert(room, {RoomId, NewUsers}),
-      notify_room_players(NewUsers),
+      notify_room_players(NewUsers),           %% notify everybody about who are in the room
       if length(NewUsers) == 3 ->
-        ulti_play:start_game(NewUsers);
+        ulti_play:start_game(NewUsers);        %% if everyone is here let us start to play
       true ->
         ok
       end,

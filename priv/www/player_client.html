@@ -18,16 +18,30 @@
     <title></title>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type="text/javascript">
+        var playerNo = 0;
+        var nextPlayer = -1;
         var socket = new WebSocket("ws://localhost:8080/ws");
 
         socket.onmessage = function(evt) {
             console.log(evt.data);
             $("#result").html(evt.data);
 
-            var $cmd = evt.data.split(':');
+            var $cmd = evt.data.trim().split(' ');
             switch ($cmd[0].trim()) {
+                case 'joined':
+                    playerNo = parseInt($cmd[1]);
+                    break;
+                case 'start':
+                    nextPlayer = parseInt($cmd[1]);
+                    break;
                 case 'cards':
-                    drawCards($cmd[1].trim());
+                    $cmd.shift(1);
+                    drawCards($cmd);
+                    break;
+                case 'put':
+                    $p = parseInt($cmd[1]);
+                    nextPlayer = ($p % 3) + 1;
+                    // TODO: draw card to table
                     break;
             }
         };
@@ -69,10 +83,9 @@
         }
 
         function drawCards(cards) {
-            var $params = cards.split(' ');
             $("#cards").empty();
 
-            $($params).each(function(index, val) {
+            $(cards).each(function(index, val) {
                 var $card = $('<div/>');
                 $card.attr('id', 'card' + index);
                 $card.addClass('face');
@@ -91,16 +104,24 @@
                 $card.data('card', val);
 
                 $card.dblclick(function() {
-                    var $id = $(this).attr('id');
-                    var $c = $(this).data('card');
+                    if (playerNo == nextPlayer) {
+                        var $id = $(this).attr('id');
+                        var $c = $(this).data('card');
 
-                    console.log("put " + $c);
-                    socket.send("put " + $c);
-                    $(this).css('display', 'none');
+                        console.log("put " + $c);
+                        socket.send("put " + $c);
+                        $(this).css('display', 'none');
+                        nextPlayer = (nextPlayer % 3) + 1;
+                    }
                 });
 
                 $("#cards").append($card);
             });
+        }
+
+        function connectAndJoin(name) {
+            socket.send("connect " + name);
+            socket.send("join " + $('#roomId').val());
         }
     </script>
 </head>
@@ -108,16 +129,20 @@
 
 <form id="control" onsubmit="sendCommand()">
     <input type="text" name="command" id="command">
+    <input type="text" name="room" id="roomId" value="3">
     <input type="button" value="Send" onclick="sendCommand()">
+    <input type="button" value="Ann" onclick="connectAndJoin('Ann')">
+    <input type="button" value="Bob" onclick="connectAndJoin('Bob')">
+    <input type="button" value="Chuck" onclick="connectAndJoin('Chuck')">
 </form>
 
 <div id="result"></div>
 
 <div id="table">
-    <div id="player1" style="position: absolute; left: 50px; top: 40px">Player #1<br/>Piros negyvenszáz ulti durchmars</div>
-    <div id="player2" style="position: absolute; left: 650px; top: 40px">Player #2<br/>Piros negyvenszáz ulti durchmars</div>
-    <div id="player3" style="position: absolute; left: 200px; top: 450px">Player #3<br/>Piros negyvenszáz ulti durchmars</div>
-    <div id="cardplace" style="position: absolute; left: 430px; top: 330px; width: 30px; height: 30px; border: 1px solid black"></div>
+    <div id="player1" style="position: absolute; left: 50px; top: 50px">Player #1<br/>Piros negyvenszáz ulti durchmars</div>
+    <div id="player2" style="position: absolute; left: 650px; top: 50px">Player #2<br/>Piros negyvenszáz ulti durchmars</div>
+    <div id="player3" style="position: absolute; left: 200px; top: 460px">Player #3<br/>Piros negyvenszáz ulti durchmars</div>
+    <div id="cardplace" style="position: absolute; left: 430px; top: 340px; width: 30px; height: 30px; border: 1px solid black"></div>
     <div id="cards"></div>
 </div>
 

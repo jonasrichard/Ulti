@@ -27,7 +27,7 @@ websocket_handle({text, Msg}, Req, State) ->
         RoomId when is_integer(RoomId) ->
           case ulti_room_server:join(RoomId, State#state.player_name) of
             joined ->
-              {reply, {text, <<"joined">>}, Req, State#state{room_id = RoomId}};
+              {ok, Req, State#state{room_id = RoomId}};
             room_is_full ->
               {reply, {text, <<"error The room is full">>}, Req, State}
           end;
@@ -44,8 +44,10 @@ websocket_handle(_Data, Req, State) ->
 
 %%
 %% Client can get the following type of messages
+%% - joined 2                     the just joined player will be no. 2 player
 %% - room 1, Joe, 2 Jack ...      the number of the player (can be 1, 2, 3)
 %% - hand ...                     the cards on the player's hand
+%% - start 3                      player 3 will start
 %% - other_hand 1 5               player 1 has 5 cards
 %% - put 2 tok_also               player 2 put tok also
 %% - take 3                       player 3 took the table's cards
@@ -53,12 +55,16 @@ websocket_handle(_Data, Req, State) ->
 %%
 websocket_info(Msg, Req, State) ->
   case Msg of
+    {joined, No} ->
+      {reply, {text, io_lib:format("joined ~w", [No])}, Req, State};
     {init, GamePid, Hand} ->
-      {reply, {text, io_lib:format("cards: ~s", [convert_hand(Hand)])}, Req, State#state{game_pid = GamePid}};
+      {reply, {text, io_lib:format("cards ~s", [convert_hand(Hand)])}, Req, State#state{game_pid = GamePid}};
     {hand, Hand} ->
-      {reply, {text, io_lib:format("cards: ~s", [convert_hand(Hand)])}, Req, State};
+      {reply, {text, io_lib:format("cards ~s", [convert_hand(Hand)])}, Req, State};
     {room, Users} ->
       {reply, {text, io_lib:format("room ~s", [convert_room_players(Users)])}, Req, State};
+    {start, No} ->
+      {reply, {text, io_lib:format("start ~w", [No])}, Req, State};
     {put, No, Card} ->
       {reply, {text, io_lib:format("put ~w ~s", [No, convert_card(Card)])}, Req, State};
     {take, No} ->
