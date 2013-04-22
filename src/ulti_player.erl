@@ -1,11 +1,12 @@
 %% Copyright
 -module(ulti_player).
 -author("Richard_Jonas").
--behaviour(gen_fsm).
+-behaviour(gen_event).
 
 -include("ulti_game.hrl").
 
--export([init/1, wait_for_events/2, wait_for_card/2]).
+-export([start/3]).
+-export([init/1, handle_event/2]).
 
 -record(state, {
   handler       :: pid(),             %% Pid of the websocket handler
@@ -17,28 +18,45 @@
   modifiers     :: [game_mod()]       %% 20, 40, kontra, etc.
 }).
 
-init(Args) ->
-  {ok, wait_for_players, #state{}}.
+-spec start(Handler::pid(), GamePid::pid(), Gamer::boolean()) -> pid().
+start(Handler, GamePid, Gamer) ->
+  {ok, Pid} = gen_event:start(),
+  gen_event:add_handler(Pid, ?MODULE, {Handler, GamePid, Gamer}),
+  Pid.
 
-%% Wait for players to put card. When they finish we can put. Let us notify our player that
-%% he can put a card.
+init({Handler, GamePid, Gamer}) ->
+  Handler ! {set_event_handler, self()},
+  {ok, #state{handler = Handler, game_pid = GamePid, hand = [], gamer = Gamer, pair = nil,
+    takes = [], modifiers = []}}.
 
-wait_for_events(you_can_put_card, State) ->
-  State#state.handler ! {you_can_put_card},
-  {next_state, wait_for_card, State};
+handle_event({pair, Pair}, State) ->
+  {ok, State#state{pair = Pair}};
 
-wait_for_events({put, Player, Card}, State) ->
-  {next_state, wait_for_events, State};
+handle_event({deal, Cards}, State) ->
+  State#state.handler ! {hand, Cards},
+  {ok, State#state{hand = Cards}};
 
-wait_for_events({you_took, Take}, State) ->
-  {next_state, wait_for_events, State};
+%% We can put a card, let us notify ws_handler about that.
+handle_event(you_can_put_card, State) ->
+  State#state.handler ! you_can_put_card,
+  {ok, State};
 
-wait_for_events(_, State) ->
-  {stop, unknown_message, State}.
+%% Our player put a card
+handle_event({put, Card}, State) ->
+  NewHand = lists:delete(Card, State#state.hand),
+  gen_fsm:send_event(State#state.game_pid, {put, self(), Card}),
+  State#state.handler ! {hand, NewHand},
+  {ok, State#state{hand = NewHand}};
 
-%% Our player just put a card onto the table. Let us notify the game about that
-wait_for_card({put, Card}, State) ->
-  State#state.game_pid ! {put, self(), Card},
+handle_event({put, PlayerName, Card}, State) ->
+  State#state.handler ! {put, PlayerName, Card},
+  {ok, State};
 
+handle_event({take, Take}, State) ->
+  NewTakes = State#state.takes ++ [Take],
+  State#state.handler ! take,
+  {ok, State#state{takes = NewTakes}};
 
-
+handle_event({taker, PlayerName}, State) ->
+  State#state.handler ! {taker, PlayerName},
+  {ok, State}.

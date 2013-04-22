@@ -18,8 +18,7 @@
     <title></title>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type="text/javascript">
-        var playerNo = 0;
-        var nextPlayer = -1;
+        var canPutCard = false;
         var socket = new WebSocket("ws://localhost:8080/ws");
 
         socket.onmessage = function(evt) {
@@ -28,6 +27,10 @@
 
             var $cmd = evt.data.trim().split(' ');
             switch ($cmd[0].trim()) {
+                case 'you_can_put_card':
+                case 'take':
+                    canPutCard = true;
+                    break;
                 case 'joined':
                     playerNo = parseInt($cmd[1]);
                     break;
@@ -104,14 +107,14 @@
                 $card.data('card', val);
 
                 $card.dblclick(function() {
-                    if (playerNo == nextPlayer) {
+                    if (canPutCard) {
                         var $id = $(this).attr('id');
                         var $c = $(this).data('card');
 
                         console.log("put " + $c);
                         socket.send("put " + $c);
                         $(this).css('display', 'none');
-                        nextPlayer = (nextPlayer % 3) + 1;
+                        canPutCard = false;
                     }
                 });
 

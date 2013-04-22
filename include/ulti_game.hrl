@@ -14,7 +14,7 @@
 -type game()     :: passz | passz_piros | ulti.
 -type game_mod() :: 20 | 40 | {kontra, game()}.
 
--type player()   :: {Name::string(), HttpHandler::pid()}.
+-type player()   :: {Name::string(), EventHandler::pid()}.
 -type hand()     :: [card()].
 
 -type card_put() :: {PlayerNo::1..3, card()}.

@@ -79,8 +79,8 @@ sort(Cards) ->
 %%
 %% Gives which card hit the cards on the table
 %%
--spec which_player_take(ThreeCard, BeatFun) -> {number(), card()} when
-  ThreeCard  :: [card()],
+-spec which_player_take(ThreeCard, BeatFun) -> {pid(), card()} when
+  ThreeCard  :: [{pid(), card()}],
   BeatFun    :: fun((Card::card(), Other::card()) -> boolean()).
 which_player_take([Card1, Card2, Card3], BeatFun) ->
   which_player_take(Card1, [Card2, Card3], BeatFun).

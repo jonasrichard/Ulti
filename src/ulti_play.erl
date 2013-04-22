@@ -5,18 +5,10 @@
 
 -behaviour(gen_fsm).
 
--type player_card() :: {PlayerNo::integer(), card()}.
--type three_hands() :: {hand(), hand(), hand()}.
-
-%% TODO: store the number of the taken card (last taken card = 10 points)
-
 -record(state, {
-  players     :: {pid(), pid(), pid()},
-  hands       :: three_hands(),
-  extra       :: {card(), card()},
-  table       :: [{PlayerNo::integer(), card()}],
-  takes       :: {[take()], [take()], [take()]},
-  player_no   :: 1..3
+  players          :: [player()],
+  table            :: [{pid(), card()}],
+  current_player   :: pid()
 }).
 
 %% API
@@ -26,45 +18,45 @@
   beats/2
 ]).
 
--spec start_game(Users::[player()]) -> any().
-start_game(Users) ->
-  Players = list_to_tuple([Pid || {_PlayerName, Pid} <- Users]),
-  {H1, H2, H3} = ulti_misc:deal(),
-  [E1, E2 | H11] = H1,
-  error_logger:info_msg("Starting game ~n~p~n~p~n~p~n", [H11, H2, H3]),
-  gen_fsm:start(ulti_play, [Players, {H11, H2, H3}, [E1, E2]], []).
+-spec start_game([{string(), pid()}]) -> pid().
+start_game(Players) ->
+  {ok, Fsm} = gen_fsm:start(?MODULE, Players, []),
+  Fsm.
 
-init([Players, Hands, Extra]) ->
-  PlayerList = tuple_to_list(Players),
-  [P ! {init, self(), H} || {P, H} <- lists:zip(PlayerList, tuple_to_list(Hands))],
+init(Players) ->
+  {Names, Handlers} = lists:unzip(Players),
 
-  [P ! {start, 1} || P <- PlayerList],
-
-  {ok, wait_players_card, #state{players = Players, hands = Hands,
-    extra = Extra, player_no = 1, table = [], takes = {[], [], []}}}.
-
-wait_players_card({put, Card}, State) ->
-  {state, Players, Hands, _, Table, Takes, No} = State,
-
-  NewHands = put_card_from_hand(Card, Hands, No),
-
-  element(No, Players),
-
-  lists:zipwith(
-    fun(Num, Pid) ->
-      case Num of
-        No ->
-          Pid ! {hand, element(No, NewHands)};
-        _ ->
-          Pid ! {other_hand, No, length(element(No, NewHands))},
-          Pid ! {put, No, Card}
-      end
+  PlayerPids = lists:map(
+    fun(HandlerPid) ->
+      ulti_player:start(HandlerPid, self(), HandlerPid =:= hd(Handlers))
     end,
-    lists:seq(1, size(Players)),
-    tuple_to_list(Players)),
+    Handlers),
+
+  Gamer = hd(PlayerPids),
+
+  [P1, P2] = tl(PlayerPids),
+  gen_event:notify(P1, {pair, P2}),
+  gen_event:notify(P2, {pair, P1}),
+
+  deal(PlayerPids),
+
+  gen_event:notify(Gamer, you_can_put_card),
+
+  {ok, wait_players_card, #state{
+    players = lists:zip(Names, PlayerPids),
+    table = [],
+    current_player = hd(PlayerPids)
+  }}.
+
+wait_players_card({put, Pid, Card}, State) ->
+  {state, Players, Table, Current} = State,
+
+  Pid = Current,
+
+  [gen_event:notify(Pid, {put, Name, Card}) || {Name, Pid} <- Players, Pid =/= Current],
 
   %% add to the table
-  NewTable = Table ++ [{No, Card}],
+  NewTable = Table ++ [{Current, Card}],
 
   %% if table size == 3 evaluate it, set next player no, add table to the take
   case NewTable of
@@ -73,20 +65,23 @@ wait_players_card({put, Card}, State) ->
       error_logger:info_msg("Table: ~w take ~w~n", [NewTable, Taker]),
 
       %% Notify players
-      [Player ! {take, Taker} || Player <- tuple_to_list(Players)],
+      TakerName = lists:keyfind(Taker, 2, Players),
+      [if
+        Player =:= Taker -> gen_event:notify(Player, {take, NewTable});
+        true -> gen_event:notify(Player, {taker, TakerName})
+      end
+        || {_Name, Player} <- Players],
 
-      {next_state, wait_players_card, State#state{
-          hands = NewHands,
-          table = [],
-          takes = setelement(Taker, Takes, lists:append(element(Taker, Takes), [list_to_tuple(NewTable)])),
-          player_no = Taker
-      }};
+      {next_state, wait_players_card, State#state{table = [], current_player = Taker}};
     _ ->
-      {next_state, wait_players_card, State#state{
-          hands = NewHands,
-          table = NewTable,
-          player_no = No rem 3 + 1
-      }}
+      NextPlayer =
+        case Players of
+          [{_, Current}, {_, P}, _] -> P;
+          [_, {_, Current}, {_, P}] -> P;
+          [{_, P}, _, {_, Current}] -> P
+        end,
+      gen_event:notify(NextPlayer, you_can_put_card),
+      {next_state, wait_players_card, State#state{table = NewTable, current_player = NextPlayer}}
   end.
 
 terminate(normal, _, State) ->
@@ -94,6 +89,12 @@ terminate(normal, _, State) ->
   ok;
 terminate(_, _, _) ->
   ok.
+
+-spec deal([pid()]) -> any().
+deal(Players) ->
+  {H1, H2, H3} = ulti_misc:deal(),
+  HH1 = tl(tl(H1)),
+  lists:zipwith(fun(P, H) -> gen_event:notify(P, {deal, H}) end, Players, [HH1, H2, H3]).
 
 %%
 %% True if first card cannot be hit by the second one.
@@ -115,13 +116,13 @@ evaluate_game(AllTakes) ->
     lists:map(
       fun(Takes) ->
         lists:foldl(
-          fun({Round, Cards}, Acc) ->
+          fun({Round, Cards}, Acc1) ->
             lists:foldl(
-              fun({_, 10}, Acc)  -> Acc + 10;
-                 ({_, asz}, Acc) -> Acc + 10;
-                 (_, Acc)        -> Acc
+              fun({_, 10}, Acc2)  -> Acc2 + 10;
+                 ({_, asz}, Acc2) -> Acc2 + 10;
+                 (_, Acc2)        -> Acc2
               end,
-              if Round =:= 10 -> Acc + 10; true -> Acc end,
+              if Round =:= 10 -> Acc1 + 10; true -> Acc1 end,
               Cards
             )
           end,
@@ -131,13 +132,6 @@ evaluate_game(AllTakes) ->
       end,
       tuple_to_list(AllTakes)
     ),
-  MaxPoint = lists:max(PartyPoints),
+  MaxPoint = lists:max(PartyPoints)
   .
-
-%% TODO: no such card in the hand
--spec put_card_from_hand(card(), three_hands(), integer()) -> three_hands().
-put_card_from_hand(Card, Hands, PlayerNumber) ->
-  Hand = element(PlayerNumber, Hands),
-  NewHand = lists:delete(Card, Hand),
-  setelement(PlayerNumber, Hands, NewHand).
 

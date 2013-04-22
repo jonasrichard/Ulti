@@ -1,10 +1,15 @@
 %% Copyright
 -module(ulti_ws_handler).
 -author("Richard_Jonas").
-%-behaviour(cowboy_websocket_handler).
+
+-include("ulti_game.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--record(state, {player_name, room_id, game_pid}).
+-record(state, {
+  player_name      :: string(),
+  room_id          :: integer(),
+  player           :: pid()
+}).
 
 %% API
 -export([init/3, websocket_init/3, websocket_handle/3, websocket_info/3, websocket_terminate/3]).
@@ -36,7 +41,7 @@ websocket_handle({text, Msg}, Req, State) ->
       end;
     [<<"put">>, CardMsg] ->
       Card = parse_card(CardMsg),
-      gen_fsm:send_event(State#state.game_pid, {put, Card}),
+      gen_event:notify(State#state.player, {put, Card}),
       {ok, Req, State}
   end;
 websocket_handle(_Data, Req, State) ->
@@ -55,20 +60,22 @@ websocket_handle(_Data, Req, State) ->
 %%
 websocket_info(Msg, Req, State) ->
   case Msg of
+    {set_event_handler, EvtPid} ->
+      {ok, Req, State#state{player = EvtPid}};
+    you_can_put_card ->
+      {reply, {text, "you_can_put_card"}, Req, State};
     {joined, No} ->
       {reply, {text, io_lib:format("joined ~w", [No])}, Req, State};
-    {init, GamePid, Hand} ->
-      {reply, {text, io_lib:format("cards ~s", [convert_hand(Hand)])}, Req, State#state{game_pid = GamePid}};
     {hand, Hand} ->
       {reply, {text, io_lib:format("cards ~s", [convert_hand(Hand)])}, Req, State};
     {room, Users} ->
       {reply, {text, io_lib:format("room ~s", [convert_room_players(Users)])}, Req, State};
-    {start, No} ->
-      {reply, {text, io_lib:format("start ~w", [No])}, Req, State};
     {put, No, Card} ->
       {reply, {text, io_lib:format("put ~w ~s", [No, convert_card(Card)])}, Req, State};
-    {take, No} ->
-      {reply, {text, io_lib:format("take ~w", [No])}, Req, State};
+    take ->
+      {reply, {text, "take"}, Req, State};
+    {taker, PlayerName} ->
+      {reply, {text, io_lib:format("taker ~w", [PlayerName])}, Req, State};
     _ ->
       {ok, Req, State}
   end.
@@ -78,12 +85,15 @@ websocket_terminate(_Reason, _Req, State) ->
   ulti_room_server:leave(State#state.room_id),
   ok.
 
--spec parse_command(Command) -> Words when
-  Command  :: binary(),
-  Words    :: [binary()].
+%%
+%%    Serialization
+%%
+
+-spec parse_command(Command::binary()) -> Words::[binary()].
 parse_command(Command) ->
   [Word || Word <- binary:split(Command, <<32>>, [global, trim]), byte_size(Word) > 0].
 
+-spec parse_card(binary()) -> card().
 parse_card(CardMsg) ->
   [C, N] = binary:split(CardMsg, <<"_">>),
   N2 =
@@ -126,13 +136,15 @@ convert_room_players(Users) ->
 %%   Tests
 %%
 
-parse_card_test() ->
-  {tok, 7} = parse_card(<<"tok_7">>),
-  {piros, also} = parse_card(<<"piros_also">>).
+parse_card_test() -> [
+  ?_assertEqual({tok, 7}, parse_card(<<"tok_7">>)),
+  ?_assertEqual({piros, also}, parse_card(<<"piros_also">>))
+].
 
-convert_card_test() ->
-  <<"tok_felso">> = convert_card({tok, felso}),
-  <<"makk_8">> = convert_card({makk, 8}).
+convert_card_test() -> [
+  ?_assertEqual(<<"tok_felso">>, convert_card({tok, felso})),
+  ?_assertEqual(<<"makk_8">>, convert_card({makk, 8}))
+].
 
 convert_hand_test() ->
-  ?assertEqual(<<"tok_asz makk_10 ">>, convert_hand([{tok, asz}, {makk, 10}])).
+  ?_assertEqual(<<"tok_asz makk_10 ">>, convert_hand([{tok, asz}, {makk, 10}])).
