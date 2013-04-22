@@ -8,6 +8,7 @@
 -export([deal/0, sort/1,
   which_player_take/2, value_to_number/1]).
 
+-spec deal() -> {hand(), hand(), hand()}.
 deal() ->
   deal([], [], [], generate_cards()).
 

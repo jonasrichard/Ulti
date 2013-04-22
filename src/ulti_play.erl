@@ -5,13 +5,18 @@
 
 -behaviour(gen_fsm).
 
+-type player_card() :: {PlayerNo::integer(), card()}.
+-type three_hands() :: {hand(), hand(), hand()}.
+
+%% TODO: store the number of the taken card (last taken card = 10 points)
+
 -record(state, {
-  players,
-  hands,           %% tuple of list of cards
-  extra,
-  table,           %% [{2, {tok, 10}}, {3, {zold, 9}] list of number of player and its card
-  takes,           %% tuple of taken cards [{player_no, card}, ...]
-  player_no
+  players     :: {pid(), pid(), pid()},
+  hands       :: three_hands(),
+  extra       :: {card(), card()},
+  table       :: [{PlayerNo::integer(), card()}],
+  takes       :: {[take()], [take()], [take()]},
+  player_no   :: 1..3
 }).
 
 %% API
@@ -21,7 +26,7 @@
   beats/2
 ]).
 
--spec start_game([{string(), pid()}]) -> any().
+-spec start_game(Users::[player()]) -> any().
 start_game(Users) ->
   Players = list_to_tuple([Pid || {_PlayerName, Pid} <- Users]),
   {H1, H2, H3} = ulti_misc:deal(),
@@ -41,19 +46,7 @@ init([Players, Hands, Extra]) ->
 wait_players_card({put, Card}, State) ->
   {state, Players, Hands, _, Table, Takes, No} = State,
 
-  Hand = element(No, Hands),
-
-  %% check if Pack contains card
-  case lists:member(Card, Hand) of
-    false ->
-      error_logger:error_msg("Invalid card ~p, not in player's hand~n", [Card]),
-      {ok, wait_players_card, State};
-    _ ->
-      ok
-  end,
-
-  %% delete Card
-  NewHand = lists:delete(Card, Hand),
+  NewHands = put_card_from_hand(Card, Hands, No),
 
   element(No, Players),
 
@@ -61,9 +54,9 @@ wait_players_card({put, Card}, State) ->
     fun(Num, Pid) ->
       case Num of
         No ->
-          Pid ! {hand, NewHand};
+          Pid ! {hand, element(No, NewHands)};
         _ ->
-          Pid ! {other_hand, No, length(NewHand)},
+          Pid ! {other_hand, No, length(element(No, NewHands))},
           Pid ! {put, No, Card}
       end
     end,
@@ -83,14 +76,14 @@ wait_players_card({put, Card}, State) ->
       [Player ! {take, Taker} || Player <- tuple_to_list(Players)],
 
       {next_state, wait_players_card, State#state{
-          hands = setelement(No, Hands, NewHand),
+          hands = NewHands,
           table = [],
           takes = setelement(Taker, Takes, lists:append(element(Taker, Takes), [list_to_tuple(NewTable)])),
           player_no = Taker
       }};
     _ ->
       {next_state, wait_players_card, State#state{
-          hands = setelement(No, Hands, NewHand),
+          hands = NewHands,
           table = NewTable,
           player_no = No rem 3 + 1
       }}
@@ -113,7 +106,36 @@ beats({Color1, Value1}, {Color2, Value2}) ->
     false
   end.
 
-%%-spec put_card_from_hand(Card, Hands, PlayerNumber) -> NewHands when
+%% TODO: who is the gamer? Players' points against him will be added!
+%% {win, party, 70}, {win, silent_ulti}
+%% silent ulti, silent 100, silent durchmars
+-spec evaluate_game({[take()], [take()], [take()]}) -> any().
+evaluate_game(AllTakes) ->
+  PartyPoints =
+    lists:map(
+      fun(Takes) ->
+        lists:foldl(
+          fun({Round, Cards}, Acc) ->
+            lists:foldl(
+              fun({_, 10}, Acc)  -> Acc + 10;
+                 ({_, asz}, Acc) -> Acc + 10;
+                 (_, Acc)        -> Acc
+              end,
+              if Round =:= 10 -> Acc + 10; true -> Acc end,
+              Cards
+            )
+          end,
+          0,
+          Takes
+        )
+      end,
+      tuple_to_list(AllTakes)
+    ),
+  MaxPoint = lists:max(PartyPoints),
+  .
+
+%% TODO: no such card in the hand
+-spec put_card_from_hand(card(), three_hands(), integer()) -> three_hands().
 put_card_from_hand(Card, Hands, PlayerNumber) ->
   Hand = element(PlayerNumber, Hands),
   NewHand = lists:delete(Card, Hand),
