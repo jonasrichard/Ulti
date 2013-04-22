@@ -11,6 +11,9 @@
 -type face()     :: 7 | 8 | 9 | also | felso | kiraly | 10 | asz.
 -type card()     :: {color(), face()}.
 
+-type game()     :: passz | passz_piros | ulti.
+-type game_mod() :: 20 | 40 | {kontra, game()}.
+
 -type player()   :: {Name::string(), HttpHandler::pid()}.
 -type hand()     :: [card()].
 
