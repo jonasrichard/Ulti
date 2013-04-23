@@ -8,13 +8,16 @@
 -record(state, {
   players          :: [player()],
   table            :: [{pid(), card()}],
-  current_player   :: pid()
+  current_player   :: pid(),
+  round = 1        :: 1..10,
+  gamer_takes = [] :: [take()],
+  opponents = []   :: [take()]
 }).
 
 %% API
 -export([
   start_game/1,
-  init/1, wait_players_card/2, terminate/3
+  init/1, wait_players_card/2, collect_takes/2, terminate/3
 ]).
 
 -spec start_game([{string(), pid()}]) -> pid().
@@ -48,30 +51,42 @@ init(Players) ->
   }}.
 
 wait_players_card({put, Pid, Card}, State) ->
-  {state, Players, Table, Current} = State,
+  Players = State#state.players,
+  Current = State#state.current_player,
 
   Pid = Current,
 
-  [gen_event:notify(Pid, {put, Name, Card}) || {Name, Pid} <- Players, Pid =/= Current],
+  [gen_event:notify(PPid, {put, Name, Card}) || {Name, PPid} <- Players, PPid =/= Current],
 
   %% add to the table
-  NewTable = Table ++ [{Current, Card}],
+  NewTable = State#state.table ++ [{Current, Card}],
 
   %% if table size == 3 evaluate it, set next player no, add table to the take
   case NewTable of
     _ when length(NewTable) == 3 ->
-      {Taker, _} = ulti_misc:which_player_take(NewTable, nil),
+      {Taker, _} = ulti_misc:which_player_take(NewTable, {trump, tok}),
       error_logger:info_msg("Table: ~w take ~w~n", [NewTable, Taker]),
+
+      Round = State#state.round,
 
       %% Notify players
       TakerName = lists:keyfind(Taker, 2, Players),
       [if
-        Player =:= Taker -> gen_event:notify(Player, {take, NewTable});
+        Player =:= Taker -> gen_event:notify(Player, {take, {Round, NewTable}});
         true -> gen_event:notify(Player, {taker, TakerName})
       end
         || {_Name, Player} <- Players],
 
-      {next_state, wait_players_card, State#state{table = [], current_player = Taker}};
+      if
+        Round =:= 10 ->
+          [gen_event:notify(Player, game_end )|| {_, Player} <- Players],
+          {next_state, collect_takes, State#state{table = [], current_player = Taker}};
+        true ->
+          {next_state, wait_players_card, State#state{
+            table = [],
+            current_player = Taker,
+            round = Round + 1}}
+      end;
     _ ->
       NextPlayer =
         case Players of
@@ -83,8 +98,24 @@ wait_players_card({put, Pid, Card}, State) ->
       {next_state, wait_players_card, State#state{table = NewTable, current_player = NextPlayer}}
   end.
 
+collect_takes(Msg, State) ->
+  NewState =
+    case Msg of
+      {gamer, Pid, Takes} ->
+        State#state{current_player = Pid, gamer_takes = Takes};
+      {opponent, Takes} ->
+        State#state{opponents = State#state.opponents ++ Takes}
+    end,
+
+  if
+    length(State#state.gamer_takes) + length(State#state.opponents) =:= 10 ->
+      {stop, normal, NewState};
+    true ->
+      {next_state, collect_takes, NewState}
+  end.
+
 terminate(normal, _, State) ->
-  %% evaluate game
+  error_logger:info_msg("Evaluate ~w~n", [State]),
   ok;
 terminate(_, _, _) ->
   ok.

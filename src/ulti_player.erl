@@ -59,4 +59,13 @@ handle_event({take, Take}, State) ->
 
 handle_event({taker, PlayerName}, State) ->
   State#state.handler ! {taker, PlayerName},
+  {ok, State};
+
+handle_event(game_end, State) ->
+  if
+    State#state.gamer ->
+      gen_fsm:send_event(State#state.game_pid, {gamer, self(), State#state.takes});
+    true ->
+      gen_fsm:send_event(State#state.game_pid, {opponent, State#state.takes})
+  end,
   {ok, State}.
