@@ -137,14 +137,14 @@ convert_room_players(Users) ->
 %%
 
 parse_card_test() -> [
-  ?_assertEqual({tok, 7}, parse_card(<<"tok_7">>)),
-  ?_assertEqual({piros, also}, parse_card(<<"piros_also">>))
+  ?assertEqual({tok, 7}, parse_card(<<"tok_7">>)),
+  ?assertEqual({piros, also}, parse_card(<<"piros_also">>))
 ].
 
 convert_card_test() -> [
-  ?_assertEqual(<<"tok_felso">>, convert_card({tok, felso})),
-  ?_assertEqual(<<"makk_8">>, convert_card({makk, 8}))
+  ?assertEqual(<<"tok_felso">>, convert_card({tok, felso})),
+  ?assertEqual(<<"makk_8">>, convert_card({makk, 8}))
 ].
 
 convert_hand_test() ->
-  ?_assertEqual(<<"tok_asz makk_10 ">>, convert_hand([{tok, asz}, {makk, 10}])).
+  ?assertEqual(<<"tok_asz makk_10 ">>, convert_hand([{tok, asz}, {makk, 10}])).

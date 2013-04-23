@@ -6,7 +6,8 @@
 
 %% API
 -export([deal/0, sort/1,
-  which_player_take/2, value_to_number/1]).
+  face_to_number/1,
+  which_player_take/2, beats/2, beats_low10/2, beats_trump/3]).
 
 -spec deal() -> {hand(), hand(), hand()}.
 deal() ->
@@ -40,23 +41,42 @@ color_to_number(zold) ->
 color_to_number(piros) ->
   4.
 
--spec value_to_number(face()) -> 1..8.
-value_to_number(7) ->
+-spec face_to_number(face()) -> 1..8.
+face_to_number(7) ->
   1;
-value_to_number(8) ->
+face_to_number(8) ->
   2;
-value_to_number(9) ->
+face_to_number(9) ->
   3;
-value_to_number(also) ->
+face_to_number(also) ->
   4;
-value_to_number(felso) ->
+face_to_number(felso) ->
   5;
-value_to_number(kiraly) ->
+face_to_number(kiraly) ->
   6;
-value_to_number(10) ->
+face_to_number(10) ->
   7;
-value_to_number(asz) ->
+face_to_number(asz) ->
   8.
+
+-spec face_to_number_low10(face()) -> 1..8.
+face_to_number_low10(7) ->
+  1;
+face_to_number_low10(8) ->
+  2;
+face_to_number_low10(9) ->
+  3;
+face_to_number_low10(10) ->
+  4;
+face_to_number_low10(also) ->
+  5;
+face_to_number_low10(felso) ->
+  6;
+face_to_number_low10(kiraly) ->
+  7;
+face_to_number_low10(asz) ->
+  8.
+
 
 -spec compare_cards(card(), card()) -> boolean().
 compare_cards({Color1, Value1}, {Color2, Value2}) ->
@@ -68,7 +88,7 @@ compare_cards({Color1, Value1}, {Color2, Value2}) ->
       if N1 > N2 ->
         false;
       true ->
-        value_to_number(Value1) =< value_to_number(Value2)
+        face_to_number(Value1) =< face_to_number(Value2)
       end
   end.
 
@@ -76,23 +96,73 @@ compare_cards({Color1, Value1}, {Color2, Value2}) ->
 sort(Cards) ->
   lists:sort(fun compare_cards/2, Cards).
 
-%%
-%% Gives which card hit the cards on the table
-%%
--spec which_player_take(ThreeCard, BeatFun) -> {pid(), card()} when
-  ThreeCard  :: [{pid(), card()}],
-  BeatFun    :: fun((Card::card(), Other::card()) -> boolean()).
-which_player_take([Card1, Card2, Card3], BeatFun) ->
-  which_player_take(Card1, [Card2, Card3], BeatFun).
-which_player_take({_N, _C} = Card, [], _BeatFun) ->
-  Card;
-which_player_take({N, Card}, [{No, OtherCard} | T], BeanFun) ->
-  case BeanFun(Card, OtherCard) of
-    true ->
-      which_player_take({N, Card}, T, BeanFun);
+%% Card2 beats Card1
+-spec beats(card(), card()) -> boolean().
+beats({Color1, Face1} = _Card1, Card2) ->
+  case Card2 of
+    {Color1, Face2} ->
+      face_to_number(Face2) > face_to_number(Face1);
     _ ->
-      which_player_take({No, OtherCard}, T, BeanFun)
+      false
   end.
+
+-spec beats_low10(card(), card()) -> boolean().
+beats_low10({Color1, Face1} = _Card1, Card2) ->
+  case Card2 of
+    {Color1, Face2} ->
+      face_to_number_low10(Face2) > face_to_number_low10(Face1);
+    _ ->
+      false
+  end.
+
+-spec beats_trump(card(), card(), face()) -> boolean().
+beats_trump(Card1, Card2, Trump) ->
+  case {Card1, Card2} of
+    {{Trump, Face1}, {Trump, Face2}} ->
+      face_to_number(Face2) > face_to_number(Face1);
+    {{Trump, _}, _} ->
+      false;
+    {_, {Trump, _}} ->
+      true;
+    {_, _} ->
+      beats(Card1, Card2)
+  end.
+
+-spec which_player_take([{any, card()}], Option) -> {any(), card()} when
+  Option :: nil | low10 | {trump, face()}.
+which_player_take([H | T], Option) ->
+  which_player_take(H, T, Option).
+which_player_take(TopCard, [], _Option) ->
+  TopCard;
+which_player_take({N1, TopCard}, [{N2, Card} | Others], Option) ->
+  NewTop =
+    case Option of
+      nil ->
+        case beats(TopCard, Card) of
+          true ->
+            {N2, Card};
+          false ->
+            {N1, TopCard}
+        end;
+      low10 ->
+        case beats_low10(TopCard, Card) of
+          true ->
+            {N2, Card};
+          false ->
+            {N1, TopCard}
+        end;
+      {trump, Trump} ->
+        case beats_trump(TopCard, Card, Trump) of
+          true ->
+            {N2, Card};
+          false ->
+            {N1, TopCard}
+        end
+    end,
+
+  which_player_take(NewTop, Others, Option).
+
+
 
 %%
 %% Validate game combinations

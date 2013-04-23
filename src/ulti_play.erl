@@ -14,8 +14,7 @@
 %% API
 -export([
   start_game/1,
-  init/1, wait_players_card/2, terminate/3,
-  beats/2
+  init/1, wait_players_card/2, terminate/3
 ]).
 
 -spec start_game([{string(), pid()}]) -> pid().
@@ -61,7 +60,7 @@ wait_players_card({put, Pid, Card}, State) ->
   %% if table size == 3 evaluate it, set next player no, add table to the take
   case NewTable of
     _ when length(NewTable) == 3 ->
-      {Taker, _} = ulti_misc:which_player_take(NewTable, fun beats/2),
+      {Taker, _} = ulti_misc:which_player_take(NewTable, nil),
       error_logger:info_msg("Table: ~w take ~w~n", [NewTable, Taker]),
 
       %% Notify players
@@ -95,17 +94,6 @@ deal(Players) ->
   {H1, H2, H3} = ulti_misc:deal(),
   HH1 = tl(tl(H1)),
   lists:zipwith(fun(P, H) -> gen_event:notify(P, {deal, H}) end, Players, [HH1, H2, H3]).
-
-%%
-%% True if first card cannot be hit by the second one.
-%%
--spec beats(card(), card()) -> boolean().
-beats({Color1, Value1}, {Color2, Value2}) ->
-  if Color1 == Color2 ->
-    ulti_misc:value_to_number(Value1) > ulti_misc:value_to_number(Value2);
-  true ->
-    false
-  end.
 
 %% TODO: who is the gamer? Players' points against him will be added!
 %% {win, party, 70}, {win, silent_ulti}
