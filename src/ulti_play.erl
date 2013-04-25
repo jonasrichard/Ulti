@@ -79,7 +79,7 @@ wait_players_card({put, Pid, Card}, State) ->
 
       if
         Round =:= 10 ->
-          [gen_event:notify(Player, game_end )|| {_, Player} <- Players],
+          [gen_event:notify(Player, game_end)|| {_, Player} <- Players],
           {next_state, collect_takes, State#state{table = [], current_player = Taker}};
         true ->
           {next_state, wait_players_card, State#state{
@@ -108,7 +108,7 @@ collect_takes(Msg, State) ->
     end,
 
   if
-    length(State#state.gamer_takes) + length(State#state.opponents) =:= 10 ->
+    length(NewState#state.gamer_takes) + length(NewState#state.opponents) =:= 10 ->
       {stop, normal, NewState};
     true ->
       {next_state, collect_takes, NewState}
@@ -116,6 +116,7 @@ collect_takes(Msg, State) ->
 
 terminate(normal, _, State) ->
   error_logger:info_msg("Evaluate ~w~n", [State]),
+  evaluate_game(State#state.gamer_takes, State#state.opponents),
   ok;
 terminate(_, _, _) ->
   ok.
@@ -126,31 +127,8 @@ deal(Players) ->
   HH1 = tl(tl(H1)),
   lists:zipwith(fun(P, H) -> gen_event:notify(P, {deal, H}) end, Players, [HH1, H2, H3]).
 
-%% TODO: who is the gamer? Players' points against him will be added!
-%% {win, party, 70}, {win, silent_ulti}
-%% silent ulti, silent 100, silent durchmars
--spec evaluate_game({[take()], [take()], [take()]}) -> any().
-evaluate_game(AllTakes) ->
-  PartyPoints =
-    lists:map(
-      fun(Takes) ->
-        lists:foldl(
-          fun({Round, Cards}, Acc1) ->
-            lists:foldl(
-              fun({_, 10}, Acc2)  -> Acc2 + 10;
-                 ({_, asz}, Acc2) -> Acc2 + 10;
-                 (_, Acc2)        -> Acc2
-              end,
-              if Round =:= 10 -> Acc1 + 10; true -> Acc1 end,
-              Cards
-            )
-          end,
-          0,
-          Takes
-        )
-      end,
-      tuple_to_list(AllTakes)
-    ),
-  MaxPoint = lists:max(PartyPoints)
-  .
+evaluate_game(Gamer, Opponents) ->
+  {Winner, GamerPoints, OpponentPoints} = ulti_eval:evaluate_party(Gamer, Opponents),
+  ulti_eval:evaluate_ulti(Gamer, tok),
+  ulti_eval:evaluate_durchmars(Gamer).
 

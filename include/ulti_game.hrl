@@ -17,5 +17,5 @@
 -type player()   :: {Name::string(), EventHandler::pid()}.
 -type hand()     :: [card()].
 
--type card_put() :: {PlayerNo::1..3, card()}.
+-type card_put() :: {pid(), card()}.
 -type take()     :: {Round::1..10, [card_put()]}.
