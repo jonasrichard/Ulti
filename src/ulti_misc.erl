@@ -6,7 +6,7 @@
 
 %% API
 -export([deal/0, sort/1,
-  face_to_number/1,
+  face_to_number/1, next_kontra/1,
   which_player_take/2, beats/2, beats_low10/2, beats_trump/3]).
 
 -spec deal() -> {hand(), hand(), hand()}.
@@ -163,6 +163,9 @@ which_player_take({N1, TopCard}, [{N2, Card} | Others], Option) ->
   which_player_take(NewTop, Others, Option).
 
 
+next_kontra(kontra) -> rekontra;
+next_kontra(rekontra) -> szubkontra;
+next_kontra(szubkontra) -> mordkontra.
 
 %%
 %% Validate game combinations

@@ -15,7 +15,7 @@
   gamer         :: boolean(),         %% Is he the gamer (announced the game)
   pair          :: pid() | nil,       %% Pair if they are catcher otherwise nil
   takes         :: [take()],          %% All the rounds he took
-  modifiers     :: [game_mod()]       %% 20, 40, kontra, etc.
+  bela          :: [bela()]           %% List of bela (20, 40)
 }).
 
 -spec start(Handler::pid(), GamePid::pid(), Gamer::boolean()) -> pid().
@@ -27,7 +27,7 @@ start(Handler, GamePid, Gamer) ->
 init({Handler, GamePid, Gamer}) ->
   Handler ! {set_event_handler, self()},
   {ok, #state{handler = Handler, game_pid = GamePid, hand = [], gamer = Gamer, pair = nil,
-    takes = [], modifiers = []}}.
+    takes = []}}.
 
 handle_event({pair, Pair}, State) ->
   {ok, State#state{pair = Pair}};
@@ -50,6 +50,19 @@ handle_event({put, Card}, State) ->
 
 handle_event({put, PlayerName, Card}, State) ->
   State#state.handler ! {put, PlayerName, Card},
+  {ok, State};
+
+handle_event({bela, BelaList}, State) ->
+  lists:foreach(
+    fun(Bela) ->
+      gen_fsm:send_event(State#state.game_pid, {bela, self(), Bela})
+    end,
+    BelaList
+  ),
+  {ok, State#state{bela = BelaList}};
+
+handle_event({kontra, Game}, State) ->
+  gen_fsm:send_event(State#state.game_pid, {kontra, self(), Game}),
   {ok, State};
 
 handle_event({take, Take}, State) ->

@@ -7,6 +7,7 @@
 
 -record(state, {
   players          :: [player()],
+  game             :: [game()],
   table            :: [{pid(), card()}],
   current_player   :: pid(),
   round = 1        :: 1..10,
@@ -96,7 +97,30 @@ wait_players_card({put, Pid, Card}, State) ->
         end,
       gen_event:notify(NextPlayer, you_can_put_card),
       {next_state, wait_players_card, State#state{table = NewTable, current_player = NextPlayer}}
-  end.
+  end;
+
+wait_players_card({bela, Pid, Bela}, State) ->
+  Players = State#state.players,
+  {Name, _} = lists:keyfind(Pid, 2, Players),
+  [gen_event:notify(PlayerPid, {bela, Name, Bela}) || {_N, PlayerPid} <- Players],
+  {next_state, wait_players_card, State};
+
+wait_players_card({kontra, Pid, Game}, State) ->
+  NewGame =
+    case lists:keyfind(Game, 1, State#state.game) of
+      false ->
+        no_such_game;
+      {Game, _Color, KontraList} ->
+        NewKontra =
+          case lists:keyfind(Pid, 2, KontraList) of
+            false ->
+              {kontra, Pid};
+            {K, Pid} ->
+              ulti_misc:next_kontra(K)
+          end,
+        lists:keyreplace(Game, 1, State#state.game, NewKontra)
+    end,
+  {next_state, wait_players_card, State#state{game = NewGame}}.
 
 collect_takes(Msg, State) ->
   NewState =

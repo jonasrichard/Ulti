@@ -7,15 +7,25 @@
   options        %% list of kontra and game type pairs: {kontra, party}
 }).
 
--type color()    :: piros | tok | zold | makk.
--type face()     :: 7 | 8 | 9 | also | felso | kiraly | 10 | asz.
--type card()     :: {color(), face()}.
+-type color()         :: piros | tok | zold | makk.
+-type face()          :: 7 | 8 | 9 | also | felso | kiraly | 10 | asz.
+-type card()          :: {color(), face()}.
 
--type game()     :: passz | passz_piros | ulti.
--type game_mod() :: 20 | 40 | {kontra, game()}.
+-type game_type()     :: party | negyven_szaz | negy_asz | ulti | betli |
+                         durchmars | szintelen_durchmars | husz_szaz |
+                         rebetli | redurchmars | teritett_betli | teritett_durchmars.
 
--type player()   :: {Name::string(), EventHandler::pid()}.
--type hand()     :: [card()].
+-type licit()         :: {game_type()} | {game_type(), piros}.
 
--type card_put() :: {pid(), card()}.
--type take()     :: {Round::1..10, [card_put()]}.
+-type kontra()        :: {kontra | rekontra | szubkontra | mordkontra, pid()}.
+
+-type game()          :: {game_type(), face(), [kontra()]}.
+
+
+-type player()        :: {Name::string(), EventHandler::pid()}.
+-type hand()          :: [card()].
+
+-type card_put()      :: {pid(), card()}.
+
+-type bela()          :: {husz, 1..3} | negyven.
+-type take()          :: {Round::1..10, [card_put()]}.

@@ -89,4 +89,4 @@ eval_party_test() ->
     {7, {piros,kiraly}, {tok,10}, {piros,also}}
   ],
 
-  ?_assertEqual({winner, opponents, {gamer, 20}, {opponents, 70}}, eval_party(Gamer, Opponents)).
+  ?assertEqual({winner, opponents, {gamer, 20}, {opponents, 70}}, evaluate_party(Gamer, Opponents)).

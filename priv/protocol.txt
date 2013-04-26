@@ -1,0 +1,77 @@
+
+Messages between the browser and the server are collected here.
+
+1. Initiation, login
+
+  - connect Username::string()
+    Set the name of the user. By default the websocket is connected, so a common identifier needs to be set.
+
+    connect Joe
+
+  - join 3
+    Joins to the room 3. Undecided yet, but there will be room list with players with various strength.
+
+  + joined 3
+    Answer to the join request.
+
+  + join_refused
+    TBI: the room is full, too strong players are there, etc.
+
+  + room Player::string ...
+    Lists the player in the room when somebody is connected.
+
+2. Licit
+
+  TBD
+
+3. Playing the game
+
+  + you_can_put_card
+    A server message, notifies the user that it is his turn.
+
+  - bela ...
+    Announce husz or negyven.
+
+    have husz_2 negyven
+
+  + bela PlayerName::string() husz_2 negyven
+    Other player announced 2x husz and negyven.
+
+  - kontra game
+    User can send multiple messages of this type.
+
+    kontra party
+    kontra ulti
+
+  + kontra PlayerName game
+    Notifies others.
+
+  - put Card::card()
+    Put a card to the table (call).
+
+    put tok_asz
+
+  + cards Card::card() ...
+    Informs the player about which cards remain in his hand.
+
+    cards tok_8 tok_also tok_felso ...
+
+  + put PlayerName::string() Card::card()
+    Informs players that somebody called a card.
+
+    put Joe tok_10
+
+  + take
+    You just took the round.
+
+  + taker PlayerName::string()
+    Informs other players that PlayerName took the table.
+
+  + error no such card
+    TBI
+
+4. Evaluation
+
+  + winner PlayerName::string() Game::string()
+
+    winner Joe ulti kontra 80 | Jack party 10
