@@ -1,7 +1,9 @@
 *.beam
 *.iml
 *.plt
+.eunit/*
 .idea/
 ebin/*
 deps/*
+doc/*
 log/*

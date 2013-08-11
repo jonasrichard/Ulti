@@ -1,55 +1,68 @@
 %% Copyright
 -module(ulti_play).
 -author("richard").
--include("ulti_game.hrl").
 
 -behaviour(gen_fsm).
 
+-include("ulti_game.hrl").
+
 -record(state, {
-  players          :: [player()],
-  game             :: [game()],
-  table            :: [{pid(), card()}],
-  current_player   :: pid(),
-  round = 1        :: 1..10,
-  gamer_takes = [] :: [take()],
-  opponents = []   :: [take()]
+    players          :: [player()],
+    game             :: [game()],
+    table            :: [{pid(), card()}],
+    current_player   :: pid(),
+    round = 1        :: 1..10,
+    gamer_takes = [] :: [take()],
+    opponents = []   :: [take()]
 }).
 
 %% API
+-export([start_game/1]).
+
+%% Callback functions
 -export([
-  start_game/1,
-  init/1, wait_players_card/2, collect_takes/2, terminate/3
-]).
+        init/1,
+        wait_players_card/2, collect_takes/2,
+        terminate/3
+    ]).
 
 -spec start_game([{string(), pid()}]) -> pid().
 start_game(Players) ->
   {ok, Fsm} = gen_fsm:start(?MODULE, Players, []),
   Fsm.
 
+%% ==================================================================
+%% Callback functions
+%% ==================================================================
+
 init(Players) ->
-  {Names, Handlers} = lists:unzip(Players),
+    {Names, Handlers} = lists:unzip(Players),
 
-  PlayerPids = lists:map(
-    fun(HandlerPid) ->
-      ulti_player:start(HandlerPid, self(), HandlerPid =:= hd(Handlers))
-    end,
-    Handlers),
+    %% Start player event listeners for each player
+    PlayerPids = lists:map(
+        fun(HandlerPid) ->
+            ulti_player:start(HandlerPid, self(), HandlerPid =:= hd(Handlers))
+        end,
+        Handlers),
 
-  Gamer = hd(PlayerPids),
+    %% Let the first player start the play (party right now)
+    Gamer = hd(PlayerPids),
 
-  [P1, P2] = tl(PlayerPids),
-  gen_event:notify(P1, {pair, P2}),
-  gen_event:notify(P2, {pair, P1}),
+    %% The other two players are on the same side (catchers)
+    [P1, P2] = tl(PlayerPids),
+    gen_event:notify(P1, {pair, P2}),
+    gen_event:notify(P2, {pair, P1}),
 
-  deal(PlayerPids),
+    %% Deal the cards
+    deal(PlayerPids),
 
-  gen_event:notify(Gamer, you_can_put_card),
+    gen_event:notify(Gamer, you_can_put_card),
 
-  {ok, wait_players_card, #state{
-    players = lists:zip(Names, PlayerPids),
-    table = [],
-    current_player = hd(PlayerPids)
-  }}.
+    {ok, wait_players_card, #state{
+            players = lists:zip(Names, PlayerPids),
+            table = [],
+            current_player = hd(PlayerPids)
+    }}.
 
 wait_players_card({put, Pid, Card}, State) ->
   Players = State#state.players,
@@ -123,19 +136,19 @@ wait_players_card({kontra, Pid, Game}, State) ->
   {next_state, wait_players_card, State#state{game = NewGame}}.
 
 collect_takes(Msg, State) ->
-  NewState =
-    case Msg of
-      {gamer, Pid, Takes} ->
-        State#state{current_player = Pid, gamer_takes = Takes};
-      {opponent, Takes} ->
-        State#state{opponents = State#state.opponents ++ Takes}
-    end,
+    NewState =
+        case Msg of
+            {gamer, Pid, Takes} ->
+                State#state{current_player = Pid, gamer_takes = Takes};
+            {opponent, Takes} ->
+                State#state{opponents = State#state.opponents ++ Takes}
+        end,
 
-  if
-    length(NewState#state.gamer_takes) + length(NewState#state.opponents) =:= 10 ->
-      {stop, normal, NewState};
-    true ->
-      {next_state, collect_takes, NewState}
+    if
+        length(NewState#state.gamer_takes) + length(NewState#state.opponents) =:= 10 ->
+            {stop, normal, NewState};
+        true ->
+            {next_state, collect_takes, NewState}
   end.
 
 terminate(normal, _, State) ->
@@ -147,9 +160,13 @@ terminate(_, _, _) ->
 
 -spec deal([pid()]) -> any().
 deal(Players) ->
-  {H1, H2, H3} = ulti_misc:deal(),
-  HH1 = tl(tl(H1)),
-  lists:zipwith(fun(P, H) -> gen_event:notify(P, {deal, H}) end, Players, [HH1, H2, H3]).
+    {H1, H2, H3} = ulti_misc:deal(),
+    HH1 = tl(tl(H1)),
+    lists:zipwith(
+        fun(P, H) ->
+            gen_event:notify(P, {deal, H})
+        end,
+        Players, [HH1, H2, H3]).
 
 evaluate_game(Gamer, Opponents) ->
   {Winner, GamerPoints, OpponentPoints} = ulti_eval:evaluate_party(Gamer, Opponents),

@@ -1,20 +1,28 @@
-%% Copyright
+%% ==================================================================
+%% Author: Richard Jonas
+%% Description: Websocket handler
+%% ==================================================================
 -module(ulti_ws_handler).
--author("Richard_Jonas").
+-author("Richard Jonas").
 
 -include("ulti_game.hrl").
+
+-ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
+-endif.
 
 -record(state, {
-  player_name      :: string(),
-  room_id          :: integer(),
-  player           :: pid()
+    player_name      :: string(),
+    room_id          :: integer(),
+    player           :: pid()
 }).
 
 %% API
 -export([init/3, websocket_init/3, websocket_handle/3, websocket_info/3, websocket_terminate/3]).
 
--export([convert_card_test/0, convert_hand_test/0, parse_card_test/0]).
+%% ==================================================================
+%% Cowboy web socket callbacks
+%% ==================================================================
 
 init({tcp, http}, _Req, _Opts) ->
   {upgrade, protocol, cowboy_websocket}.
@@ -93,6 +101,7 @@ websocket_terminate(_Reason, _Req, State) ->
 parse_command(Command) ->
   [Word || Word <- binary:split(Command, <<32>>, [global, trim]), byte_size(Word) > 0].
 
+%% TODO: remove atom table attack
 -spec parse_card(binary()) -> card().
 parse_card(CardMsg) ->
   [C, N] = binary:split(CardMsg, <<"_">>),
@@ -132,9 +141,11 @@ convert_room_players(Users) ->
   R = lists:foldr(fun({Num, Name}, Acc) -> [integer_to_list(Num), Name | Acc] end, [], Users),
   string:join(R, ", ").
 
-%%
-%%   Tests
-%%
+%% ==================================================================
+%% Tests
+%% ==================================================================
+
+-ifdef(TEST).
 
 parse_card_test() -> [
   ?assertEqual({tok, 7}, parse_card(<<"tok_7">>)),
@@ -148,3 +159,6 @@ convert_card_test() -> [
 
 convert_hand_test() ->
   ?assertEqual(<<"tok_asz makk_10 ">>, convert_hand([{tok, asz}, {makk, 10}])).
+
+-endif.
+

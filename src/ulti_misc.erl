@@ -27,10 +27,13 @@ deal(First, Second, Third, Pack) when length(Pack) > 2 ->
 deal(First, Second, Third, Pack) ->
   {sort(First ++ Pack), sort(Second), sort(Third)}.
 
+%% @doc Generate all 32 card of Hungarian cards
 -spec generate_cards() -> [card()].
 generate_cards() ->
-  [{X,Y} || X <- [tok, makk, piros, zold], Y <- [7, 8, 9, also, felso, kiraly, 10, asz]].
+    [{X,Y} || X <- [tok, makk, piros, zold],
+              Y <- [7, 8, 9, also, felso, kiraly, 10, asz]].
 
+%% @doc Convert color to numeric value
 -spec color_to_number(color()) -> 1..4.
 color_to_number(tok) ->
   1;
@@ -41,6 +44,7 @@ color_to_number(zold) ->
 color_to_number(piros) ->
   4.
 
+%% @doc Convert face to numberic value
 -spec face_to_number(face()) -> 1..8.
 face_to_number(7) ->
   1;
