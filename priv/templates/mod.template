@@ -1,0 +1,6 @@
+{variables, [
+    {modid, "mymod"}
+]}.
+
+{template, "mod.erl", "src/{{modid}}.erl"}.
+

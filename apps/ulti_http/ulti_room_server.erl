@@ -8,7 +8,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start/0, start_link/0, stop/0, join/2, leave/1, get_players/1]).
+-export([start_link/0, join/2, leave/1, get_players/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_info/2, terminate/2]).

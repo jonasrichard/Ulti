@@ -1,0 +1,13 @@
+{application, ulti_game, [
+    {description, "Ulti game application"},
+    {id, "ulti_game"},
+    {vsn, "0.1.0"},
+    {registered, [ulti_room_server]},
+    {applications, [
+        kernel,
+        stdlib,
+        crypto,
+        sasl]},
+    {mod, {ulti_game, []}}
+]}.
+

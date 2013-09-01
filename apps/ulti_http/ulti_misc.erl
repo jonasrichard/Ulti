@@ -44,42 +44,6 @@ color_to_number(zold) ->
 color_to_number(piros) ->
   4.
 
-%% @doc Convert face to numberic value
--spec face_to_number(face()) -> 1..8.
-face_to_number(7) ->
-  1;
-face_to_number(8) ->
-  2;
-face_to_number(9) ->
-  3;
-face_to_number(also) ->
-  4;
-face_to_number(felso) ->
-  5;
-face_to_number(kiraly) ->
-  6;
-face_to_number(10) ->
-  7;
-face_to_number(asz) ->
-  8.
-
--spec face_to_number_low10(face()) -> 1..8.
-face_to_number_low10(7) ->
-  1;
-face_to_number_low10(8) ->
-  2;
-face_to_number_low10(9) ->
-  3;
-face_to_number_low10(10) ->
-  4;
-face_to_number_low10(also) ->
-  5;
-face_to_number_low10(felso) ->
-  6;
-face_to_number_low10(kiraly) ->
-  7;
-face_to_number_low10(asz) ->
-  8.
 
 
 -spec compare_cards(card(), card()) -> boolean().

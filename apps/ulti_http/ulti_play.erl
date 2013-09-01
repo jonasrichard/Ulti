@@ -1,10 +1,14 @@
 %% Copyright
--module(ulti_play).
+-module(ulti_game_play).
 -author("richard").
 
 -behaviour(gen_fsm).
 
 -include("ulti_game.hrl").
+
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
 
 -record(state, {
     players          :: [player()],

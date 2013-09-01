@@ -106,6 +106,8 @@ take_to_round(Take) ->
 %% Tests
 %% ==================================================================
 
+-ifdef(TEST).
+
 eval_party_test() ->
   Gamer = [
     {3, {makk,9}, {tok,asz}, {makk,8}},
@@ -125,3 +127,4 @@ eval_party_test() ->
 
   ?assertEqual({{winner, opponents}, {gamer, 20}, {opponents, 70}}, evaluate_party(Gamer, Opponents)).
 
+-endif.
