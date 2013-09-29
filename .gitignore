@@ -3,7 +3,7 @@
 *.plt
 .eunit/*
 .idea/
-ebin/*
+apps/*/ebin/*
 deps/*
 doc/*
 log/*

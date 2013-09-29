@@ -2,7 +2,7 @@
 %% Author: Richard Jonas
 %% Description: Evaluates ulti games, rounds.
 %% ==================================================================
--module(ulti_eval).
+-module(ulti_game_eval).
 -author("Richard_Jonas").
 
 -include("ulti_game.hrl").

@@ -2,11 +2,11 @@
     {description, "Ulti game application"},
     {id, "ulti_game"},
     {vsn, "0.1.0"},
-    {registered, [ulti_room_server]},
+    {registered, []},
     {applications, [
         kernel,
         stdlib,
         sasl]},
-    {mod, {ulti_game, []}}
+    {mod, {ulti_game_app, []}}
 ]}.
 

@@ -1,0 +1,12 @@
+{application, ulti_http, [
+    {description, "Ulti http application"},
+    {id, "ulti_http"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        sasl
+        ]},
+    {mod, {ulti_http_app, []}}
+]}.

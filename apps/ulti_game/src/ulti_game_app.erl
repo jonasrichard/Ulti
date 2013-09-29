@@ -1,4 +1,4 @@
--module(ulti_app).
+-module(ulti_game_app).
 -author("richard").
 -behaviour(application).
 
@@ -13,11 +13,7 @@
 %% ==================================================================
 
 start() ->
-    application:start(sasl),
-    application:start(crypto),
-    application:start(ranch),
-    application:start(cowboy),
-    application:start(ulti).
+    application:start(ulti_game).
 
 %% ===================================================================
 %% Application callbacks
