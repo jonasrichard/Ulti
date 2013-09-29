@@ -19,18 +19,20 @@
 
 %% API
 -export([
-    convert_result/2,
-    evaluate_party/2, evaluate_ulti/2, evaluate_durchmars/1]).
+    evaluate_party/2,
+    evaluate_ulti/2,
+    evaluate_durchmars/1,
+    evaluate_betli/1
+]).
 
 %% ==================================================================
 %% API functions
 %% ==================================================================
 
 -spec evaluate_party(Gamer::[round()], Opponents::[round()]) ->
-        {
-            {winner, gamer | opponents}, 
-            {gamer, integer()}, 
-            {opponents, integer()}}.
+    {{winner, gamer | opponents}, 
+     {gamer, GamerPoints::integer()}, 
+     {opponents, OpponentPoints::integer()}}.
 evaluate_party(Gamer, Opponents) ->
     GamerPoints = lists:foldl(
         fun(Take, A) ->
@@ -93,14 +95,14 @@ card_points({_, 10}) -> 10;
 card_points({_, asz}) -> 10;
 card_points(_) -> 0.
 
--spec convert_result([take()], [take()]) -> {[round()], [round()]}.
-convert_result(Gamer, Opponent) ->
-  {[take_to_round(T) || T <- Gamer], [take_to_round(T) || T <- Opponent]}.
-
--spec take_to_round(take()) -> round().
-take_to_round(Take) ->
-  {Round, [{_, Card1}, {_, Card2}, {_, Card3}]} = Take,
-  {Round, Card1, Card2, Card3}.
+%%-spec convert_result([take()], [take()]) -> {[round()], [round()]}.
+%%convert_result(Gamer, Opponent) ->
+%%  {[take_to_round(T) || T <- Gamer], [take_to_round(T) || T <- Opponent]}.
+%%
+%%-spec take_to_round(take()) -> round().
+%%take_to_round(Take) ->
+%%  {Round, [{_, Card1}, {_, Card2}, {_, Card3}]} = Take,
+%%  {Round, Card1, Card2, Card3}.
 
 %% ==================================================================
 %% Tests

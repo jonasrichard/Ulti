@@ -6,7 +6,6 @@
     {applications, [
         kernel,
         stdlib,
-        crypto,
         sasl]},
     {mod, {ulti_game, []}}
 ]}.

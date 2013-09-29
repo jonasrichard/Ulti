@@ -27,9 +27,12 @@
 %%% API functions
 %%%==================================================================
 
--spec beat(Card :: card(), OtherCard :: card()) -> boolean().
+%%-------------------------------------------------------------------
 %% @doc
 %% It is true if the first card beats the second card.
+%% @end
+%%-------------------------------------------------------------------
+-spec beat(Card :: card(), OtherCard :: card()) -> boolean().
 beat(Card, {Color, Face} = _OtherCard) ->
     case Card of
         {Color, Face2} ->
@@ -38,10 +41,13 @@ beat(Card, {Color, Face} = _OtherCard) ->
             false
     end.
 
--spec beat_low10(Card :: card(), OtherCard :: card()) -> boolean().
+%%-------------------------------------------------------------------
 %% @doc
 %% It is true if the first card beats the second one and the
 %% 10 is low (betli, szintelen durchmars).
+%% @end
+%%-------------------------------------------------------------------
+-spec beat_low10(Card :: card(), OtherCard :: card()) -> boolean().
 beat_low10(Card, {Color, Face} = _OtherCard) ->
     case Card of
         {Color, Face2} ->
