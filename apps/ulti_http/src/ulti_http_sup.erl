@@ -1,4 +1,4 @@
--module(ulti_sup).
+-module(ulti_http_sup).
 -author("richard").
 
 -behaviour(supervisor).

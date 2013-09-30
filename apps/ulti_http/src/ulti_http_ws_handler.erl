@@ -2,10 +2,10 @@
 %% Author: Richard Jonas
 %% Description: Websocket handler
 %% ==================================================================
--module(ulti_ws_handler).
+-module(ulti_http_ws_handler).
 -author("Richard Jonas").
 
--include("ulti_game.hrl").
+-include_lib("ulti_game/include/ulti_game.hrl").
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -18,7 +18,13 @@
 }).
 
 %% API
--export([init/3, websocket_init/3, websocket_handle/3, websocket_info/3, websocket_terminate/3]).
+-export([
+        init/3,
+        websocket_init/3,
+        websocket_handle/3,
+        websocket_info/3,
+        websocket_terminate/3
+    ]).
 
 %% ==================================================================
 %% Cowboy web socket callbacks
@@ -93,13 +99,14 @@ websocket_terminate(_Reason, _Req, State) ->
   ulti_room_server:leave(State#state.room_id),
   ok.
 
-%%
-%%    Serialization
-%%
+%%===================================================================
+%% Serialization
+%%===================================================================
 
 -spec parse_command(Command::binary()) -> Words::[binary()].
 parse_command(Command) ->
-  [Word || Word <- binary:split(Command, <<32>>, [global, trim]), byte_size(Word) > 0].
+  [Word || Word <- binary:split(Command, <<32>>, [global, trim]),
+                   byte_size(Word) > 0].
 
 %% TODO: remove atom table attack
 -spec parse_card(binary()) -> card().
@@ -138,8 +145,11 @@ convert_hand(Hand) ->
     " "] || {C, N} <- Hand]).
 
 convert_room_players(Users) ->
-  R = lists:foldr(fun({Num, Name}, Acc) -> [integer_to_list(Num), Name | Acc] end, [], Users),
-  string:join(R, ", ").
+    R = lists:foldr(
+        fun({Num, Name}, Acc) ->
+            [integer_to_list(Num), Name | Acc]
+        end, [], Users),
+    string:join(R, ", ").
 
 %% ==================================================================
 %% Tests

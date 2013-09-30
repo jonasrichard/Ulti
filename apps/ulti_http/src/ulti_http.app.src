@@ -6,7 +6,9 @@
     {applications, [
         kernel,
         stdlib,
-        sasl
+        sasl,
+        mimetypes,
+        cowboy
         ]},
     {mod, {ulti_http_app, []}}
 ]}.

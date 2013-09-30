@@ -35,10 +35,23 @@ start() ->
 %%%==================================================================
 
 start(_StartType, _Args) ->
-    ulti_http_sup:start_link().
+    ulti_http_sup:start_link(),
+    
+    Dispatch = cowboy_router:compile([
+        {'_', [
+            {"/ulti", ulti_ws_handler, []},
+            {"/[...]", cowboy_static, [
+                {directory, {priv_dir, ulti_http, [<<"www">>]}},
+                {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
+            ]}
+        ]}
+    ]),
+
+    cowboy:start_http(ulti_http, 10, [{port, 8080}],
+        [{env, [{dispatch, Dispatch}]}]).
 
 stop(_State) ->
-    ok.
+    cowboy:stop_listener(ulti_http).
 
 %%%==================================================================
 %%% Internal functions
