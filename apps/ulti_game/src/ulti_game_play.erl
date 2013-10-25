@@ -19,6 +19,8 @@
 %%% Type definitions
 %%%------------------------------------------------------------------
 
+-export_type([color/0, face/0, card/0]).
+
 -type color()   :: zold | makk | tok | piros.
 -type face()    :: 7 | 8 | 9 | also | felso | kiraly | 10 | asz.
 -type card()    :: {color(), face()}.
