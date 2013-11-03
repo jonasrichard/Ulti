@@ -10,6 +10,8 @@
 -type face()  :: ulti_game_play:face().
 -type card()  :: ulti_game_play:card().
 
+-ifdef(TEST).
+
 proper_module_test() ->
     ?assertEqual([], proper:module(?MODULE, [{to_file, user}])).
 
@@ -40,3 +42,6 @@ prop_beat_diff_color() ->
             end
         )
     ).
+
+-endif.
+

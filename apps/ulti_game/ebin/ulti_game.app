@@ -5,4 +5,5 @@
               {registered,[]},
               {applications,[kernel,stdlib,sasl]},
               {mod,{ulti_game_app,[]}},
-              {modules,[ulti_game_app,ulti_game_eval,ulti_game_play]}]}.
+              {modules,[ulti_game_app,ulti_game_eval,ulti_game_fsm,
+                        ulti_game_play]}]}.

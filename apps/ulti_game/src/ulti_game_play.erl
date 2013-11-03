@@ -6,24 +6,16 @@
 %%%==================================================================
 -module(ulti_game_play).
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
-
 %% API exports
 -export([
         beat/2, beat_low10/2
     ]).
 
-%%%------------------------------------------------------------------
-%%% Type definitions
-%%%------------------------------------------------------------------
+-include_lib("ulti_game/include/ulti_game.hrl").
 
--export_type([color/0, face/0, card/0]).
-
--type color()   :: zold | makk | tok | piros.
--type face()    :: 7 | 8 | 9 | also | felso | kiraly | 10 | asz.
--type card()    :: {color(), face()}.
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
 
 %%%==================================================================
 %%% API functions

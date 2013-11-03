@@ -22,7 +22,8 @@
 
 -type licit()         :: {game_type()} | {game_type(), piros}.
 
--type kontra()        :: {kontra | rekontra | szubkontra | mordkontra, pid()}.
+-type kontra()        :: {kontra | rekontra | szubkontra | mordkontra, 
+                          pid()}.
 
 -type game()          :: {game_type(), face(), [kontra()]}.
 
