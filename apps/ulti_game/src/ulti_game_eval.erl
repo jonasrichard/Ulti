@@ -22,7 +22,8 @@
     evaluate_party/2,
     evaluate_ulti/2,
     evaluate_durchmars/1,
-    evaluate_betli/1
+    evaluate_betli/1,
+    licit/1
 ]).
 
 %% ==================================================================
@@ -95,14 +96,102 @@ card_points({_, 10}) -> 10;
 card_points({_, asz}) -> 10;
 card_points(_) -> 0.
 
-%%-spec convert_result([take()], [take()]) -> {[round()], [round()]}.
-%%convert_result(Gamer, Opponent) ->
-%%  {[take_to_round(T) || T <- Gamer], [take_to_round(T) || T <- Opponent]}.
-%%
-%%-spec take_to_round(take()) -> round().
-%%take_to_round(Take) ->
-%%  {Round, [{_, Card1}, {_, Card2}, {_, Card3}]} = Take,
-%%  {Round, Card1, Card2, Card3}.
+licit([passz]) ->
+    10;
+licit({piros, [passz]}) ->
+    20;
+licit([negyven_szaz]) ->
+    40;
+licit([negy_asz]) ->
+    40;
+licit([ulti]) ->
+    50;
+licit([betli]) ->
+    50;
+licit([durchmars]) ->
+    60;
+licit([szintelen_durchmars]) ->
+    60;
+licit([negyven_szaz, negy_asz]) ->
+    80;
+licit([negyven_szaz, ulti]) ->
+    80;
+licit({piros, [negyven_szaz]}) ->
+    80;
+licit([husz_szaz]) ->
+    80;
+licit([ulti, negy_asz]) ->
+    90;
+licit({piros, [negy_asz]}) ->
+    100;
+licit({piros, [ulti]}) ->
+    100;
+licit([rebetli]) ->
+    100;
+licit([negyven_szaz, durchmars]) ->
+    100;
+licit([negyven_szaz, ulti, negy_asz]) ->
+    120;
+licit([husz_szaz, ulti]) ->
+    120;
+licit([redurchmars]) ->
+    120;
+licit({piros, [durchmars]}) ->
+    120;
+licit([teritett_durchmars]) ->
+    120;
+licit([negyven_szaz, ulti, durchmars]) ->
+    140;
+licit([husz_szaz, durchmars]) ->
+    140;
+licit({piros, [negyven_szaz, ulti]}) ->
+    160;
+licit({piros, [husz_szaz]}) ->
+    160;
+licit([negyven_szaz, teritett_durchmars]) ->
+    160;
+licit([ulti, teritett_durchmars]) ->
+    160;
+licit({piros, [ulti, negy_asz]}) ->
+    180;
+licit([husz_szaz, ulti, durchmars]) ->
+    180;
+licit([negyven_szaz, ulti, teritett_durchmars]) ->
+    200;
+licit({piros, [negyven_szaz, durchmars]}) ->
+    200;
+licit({piros, [ulti, durchmars]}) ->
+    200;
+licit([husz_szaz, teritett_durchmars]) ->
+    200;
+licit([teritett_betli]) ->
+    200;
+licit({piros, [negyven_szaz, ulti, negy_asz]}) ->
+    240;
+licit({piros, [husz_szaz, negy_asz]}) ->
+    240;
+licit({piros, [husz_szaz, ulti]}) ->
+    240;
+licit([szintelen_teritett_durchmars]) ->
+    240;
+licit({piros, [negyven_szaz, ulti, durchmars]}) ->
+    280;
+licit({piros, [husz_szaz, durchmars]}) ->
+    280;
+licit({piros, [negyven_szaz, teritett_durchmars]}) ->
+    320;
+licit({piros, [ulti, teritett_durchmars]}) ->
+    320;
+licit({piros, [husz_szaz, ulti, durchmars]}) ->
+    360;
+licit([husz_szaz, ulti, teritett_durchmars]) ->
+    360;
+licit({piros, [negyven_szaz, ulti, teritett_durchmars]}) ->
+    400;
+licit({piros, [husz_szaz, teritett_durchmars]}) ->
+    400;
+licit({piros, [husz_szaz, ulti, teritett_durchmars]}) ->
+    480.
 
 %% ==================================================================
 %% Tests

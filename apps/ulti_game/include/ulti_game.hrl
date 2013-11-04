@@ -20,7 +20,7 @@
                          rebetli | redurchmars | teritett_betli |
                          teritett_durchmars.
 
--type licit()         :: {game_type()} | {game_type(), piros}.
+-type licit()         :: [game_type()] | {piros, [game_type()]}.
 
 -type kontra()        :: {kontra | rekontra | szubkontra | mordkontra, 
                           pid()}.

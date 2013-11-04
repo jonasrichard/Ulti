@@ -15,8 +15,12 @@
         wait_for_licit/2
     ]).
 
+-include_lib("ulti_game/include/ulti_game.hrl").
+
 -record(state, {
-        players = []        :: [{Name :: string(), WebSocket :: pid()}]
+        players = []        :: [{Name :: string(), WebSocket :: pid()}],
+        current_player = 1  :: 1..3,
+        licit               :: licit()
     }).
 
 %%=============================================================================
@@ -63,6 +67,20 @@ wait_for_connect({connect, UserName, WebSocket}, State) ->
 wait_for_connect(_Event, State) ->
     {next_state, wait_for_connect, State}.
 
-wait_for_licit(Event, State) ->
+%% current_player can licit
+
+wait_for_licit({licit, WebSocket, Licit}, State) ->
+    #state{current_player = Current, players = Players} = State,
+    case lists:nth(Current, Players) of
+        {UserName, WebSocket} ->
+            %% check_licit,
+            %% send message to websocket
+            ok;
+        _ ->
+            %% error, it is not your turn
+            ignore
+    end;
+
+wait_for_licit(_Event, State) ->
     {next_state, wait_for_licit, State}.
 

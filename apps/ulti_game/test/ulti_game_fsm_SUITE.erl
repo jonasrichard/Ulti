@@ -15,24 +15,21 @@ all() ->
 connect(_) ->
     {ok, Game} = gen_fsm:start_link(ulti_game_fsm, [], []),
     TestProcess = self(),
-    ct:log("Test process is ~p", [TestProcess]),
+    ct:pal("Test process is ~p", [TestProcess]),
 
     Joe = spawn_link(fun() -> player(TestProcess) end),
     Jack = spawn_link(fun() -> player(TestProcess) end),
     Jill = spawn_link(fun() -> player(TestProcess) end),
 
-    ct:log("Joe is connecting..."),
-    gen_fsm:send_event(Game, {connect, "Joe", self()}),
+    gen_fsm:send_event(Game, {connect, "Joe", Joe}),
     wait_for_connect = get_fsm_statename(Game),
     got_message(Joe, {connected, Game}),
 
-    ct:log("Jack is connecting..."),
-    gen_fsm:send_event(Game, {connect, "Jack", self()}),
+    gen_fsm:send_event(Game, {connect, "Jack", Jack}),
     wait_for_connect = get_fsm_statename(Game),
     got_message(Jack, {connected, Game}),
     
-    ct:log("Jill is connecting..."),
-    gen_fsm:send_event(Game, {connect, "Jill", self()}),
+    gen_fsm:send_event(Game, {connect, "Jill", Jill}),
     wait_for_licit = get_fsm_statename(Game),
     got_message(Jill, {connected, Game}),
 
@@ -61,7 +58,7 @@ get_fsm_state(Pid) ->
 
 got_message(Pid, Message) ->
     receive
-        Message ->
+        {Pid, Message} ->
             ct:pal("~p got ~p", [Pid, Message]),
             true;
         E ->
@@ -74,7 +71,7 @@ got_message(Pid, Message) ->
 player(TestProcess) ->
     receive
         Message ->
-            ct:log("Player ~p got ~p", [self(), Message]),
+            ct:pal("Player ~p got ~p", [self(), Message]),
             TestProcess ! {self(), Message},
             player(TestProcess)
     end.
