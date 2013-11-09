@@ -23,7 +23,7 @@
     evaluate_ulti/2,
     evaluate_durchmars/1,
     evaluate_betli/1,
-    licit/1
+    licit_value/1
 ]).
 
 %% ==================================================================
@@ -96,101 +96,101 @@ card_points({_, 10}) -> 10;
 card_points({_, asz}) -> 10;
 card_points(_) -> 0.
 
-licit([passz]) ->
+licit_value([passz]) ->
     10;
-licit({piros, [passz]}) ->
+licit_value({piros, [passz]}) ->
     20;
-licit([negyven_szaz]) ->
+licit_value([negyven_szaz]) ->
     40;
-licit([negy_asz]) ->
+licit_value([negy_asz]) ->
     40;
-licit([ulti]) ->
+licit_value([ulti]) ->
     50;
-licit([betli]) ->
+licit_value([betli]) ->
     50;
-licit([durchmars]) ->
+licit_value([durchmars]) ->
     60;
-licit([szintelen_durchmars]) ->
+licit_value([szintelen_durchmars]) ->
     60;
-licit([negyven_szaz, negy_asz]) ->
+licit_value([negyven_szaz, negy_asz]) ->
     80;
-licit([negyven_szaz, ulti]) ->
+licit_value([negyven_szaz, ulti]) ->
     80;
-licit({piros, [negyven_szaz]}) ->
+licit_value({piros, [negyven_szaz]}) ->
     80;
-licit([husz_szaz]) ->
+licit_value([husz_szaz]) ->
     80;
-licit([ulti, negy_asz]) ->
+licit_value([ulti, negy_asz]) ->
     90;
-licit({piros, [negy_asz]}) ->
+licit_value({piros, [negy_asz]}) ->
     100;
-licit({piros, [ulti]}) ->
+licit_value({piros, [ulti]}) ->
     100;
-licit([rebetli]) ->
+licit_value([rebetli]) ->
     100;
-licit([negyven_szaz, durchmars]) ->
+licit_value([negyven_szaz, durchmars]) ->
     100;
-licit([negyven_szaz, ulti, negy_asz]) ->
+licit_value([negyven_szaz, ulti, negy_asz]) ->
     120;
-licit([husz_szaz, ulti]) ->
+licit_value([husz_szaz, ulti]) ->
     120;
-licit([redurchmars]) ->
+licit_value([redurchmars]) ->
     120;
-licit({piros, [durchmars]}) ->
+licit_value({piros, [durchmars]}) ->
     120;
-licit([teritett_durchmars]) ->
+licit_value([teritett_durchmars]) ->
     120;
-licit([negyven_szaz, ulti, durchmars]) ->
+licit_value([negyven_szaz, ulti, durchmars]) ->
     140;
-licit([husz_szaz, durchmars]) ->
+licit_value([husz_szaz, durchmars]) ->
     140;
-licit({piros, [negyven_szaz, ulti]}) ->
+licit_value({piros, [negyven_szaz, ulti]}) ->
     160;
-licit({piros, [husz_szaz]}) ->
+licit_value({piros, [husz_szaz]}) ->
     160;
-licit([negyven_szaz, teritett_durchmars]) ->
+licit_value([negyven_szaz, teritett_durchmars]) ->
     160;
-licit([ulti, teritett_durchmars]) ->
+licit_value([ulti, teritett_durchmars]) ->
     160;
-licit({piros, [ulti, negy_asz]}) ->
+licit_value({piros, [ulti, negy_asz]}) ->
     180;
-licit([husz_szaz, ulti, durchmars]) ->
+licit_value([husz_szaz, ulti, durchmars]) ->
     180;
-licit([negyven_szaz, ulti, teritett_durchmars]) ->
+licit_value([negyven_szaz, ulti, teritett_durchmars]) ->
     200;
-licit({piros, [negyven_szaz, durchmars]}) ->
+licit_value({piros, [negyven_szaz, durchmars]}) ->
     200;
-licit({piros, [ulti, durchmars]}) ->
+licit_value({piros, [ulti, durchmars]}) ->
     200;
-licit([husz_szaz, teritett_durchmars]) ->
+licit_value([husz_szaz, teritett_durchmars]) ->
     200;
-licit([teritett_betli]) ->
+licit_value([teritett_betli]) ->
     200;
-licit({piros, [negyven_szaz, ulti, negy_asz]}) ->
+licit_value({piros, [negyven_szaz, ulti, negy_asz]}) ->
     240;
-licit({piros, [husz_szaz, negy_asz]}) ->
+licit_value({piros, [husz_szaz, negy_asz]}) ->
     240;
-licit({piros, [husz_szaz, ulti]}) ->
+licit_value({piros, [husz_szaz, ulti]}) ->
     240;
-licit([szintelen_teritett_durchmars]) ->
+licit_value([szintelen_teritett_durchmars]) ->
     240;
-licit({piros, [negyven_szaz, ulti, durchmars]}) ->
+licit_value({piros, [negyven_szaz, ulti, durchmars]}) ->
     280;
-licit({piros, [husz_szaz, durchmars]}) ->
+licit_value({piros, [husz_szaz, durchmars]}) ->
     280;
-licit({piros, [negyven_szaz, teritett_durchmars]}) ->
+licit_value({piros, [negyven_szaz, teritett_durchmars]}) ->
     320;
-licit({piros, [ulti, teritett_durchmars]}) ->
+licit_value({piros, [ulti, teritett_durchmars]}) ->
     320;
-licit({piros, [husz_szaz, ulti, durchmars]}) ->
+licit_value({piros, [husz_szaz, ulti, durchmars]}) ->
     360;
-licit([husz_szaz, ulti, teritett_durchmars]) ->
+licit_value([husz_szaz, ulti, teritett_durchmars]) ->
     360;
-licit({piros, [negyven_szaz, ulti, teritett_durchmars]}) ->
+licit_value({piros, [negyven_szaz, ulti, teritett_durchmars]}) ->
     400;
-licit({piros, [husz_szaz, teritett_durchmars]}) ->
+licit_value({piros, [husz_szaz, teritett_durchmars]}) ->
     400;
-licit({piros, [husz_szaz, ulti, teritett_durchmars]}) ->
+licit_value({piros, [husz_szaz, ulti, teritett_durchmars]}) ->
     480.
 
 %% ==================================================================

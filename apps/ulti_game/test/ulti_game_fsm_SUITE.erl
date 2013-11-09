@@ -10,68 +10,78 @@
 -include_lib("common_test/include/ct.hrl").
 
 all() ->
-    [connect].
+    [connect, licit].
 
-connect(_) ->
-    {ok, Game} = gen_fsm:start_link(ulti_game_fsm, [], []),
-    TestProcess = self(),
-    ct:pal("Test process is ~p", [TestProcess]),
+init_per_suite(Config) ->
+    {ok, Game} = ulti_game_fsm:start(),
+    ct:pal("Starting players..."),
 
-    Joe = spawn_link(fun() -> player(TestProcess) end),
-    Jack = spawn_link(fun() -> player(TestProcess) end),
-    Jill = spawn_link(fun() -> player(TestProcess) end),
+    Joe = spawn(fun() -> player(undefined) end),
+    Jack = spawn(fun() -> player(undefined) end),
+    Jill = spawn(fun() -> player(undefined) end),
 
-    gen_fsm:send_event(Game, {connect, "Joe", Joe}),
-    wait_for_connect = get_fsm_statename(Game),
-    got_message(Joe, {connected, Game}),
+    [{game, Game}, {players, [Joe, Jack, Jill]} | Config].
 
-    gen_fsm:send_event(Game, {connect, "Jack", Jack}),
-    wait_for_connect = get_fsm_statename(Game),
-    got_message(Jack, {connected, Game}),
+connect(Config) ->
+    Game = ?config(game, Config),
+    [Joe, Jack, Jill] = ?config(players, Config),
+
+    got_message(Joe, {connected, Game},
+            fun() -> gen_fsm:send_event(Game, {connect, "Joe", Joe}) end),
+    {wait_for_connect, _} = ulti_game_fsm:get_state(Game),
+
+    got_message(Jack, {connected, Game},
+            fun() -> gen_fsm:send_event(Game, {connect, "Jack", Jack}) end),
+    {wait_for_connect, _} = ulti_game_fsm:get_state(Game),
     
-    gen_fsm:send_event(Game, {connect, "Jill", Jill}),
-    wait_for_licit = get_fsm_statename(Game),
-    got_message(Jill, {connected, Game}),
+    got_message(Jill, {connected, Game},
+            fun() -> gen_fsm:send_event(Game, {connect, "Jill", Jill}) end),
+    {wait_for_licit, _} = ulti_game_fsm:get_state(Game).
 
-    ok.
+licit(Config) ->
+    Game = ?config(game, Config),
+    [Joe, Jack, Jill] = ?config(players, Config),
 
-get_fsm_statename(Pid) ->
-    proplists:get_value("StateName", get_fsm_state(Pid)).
+    gen_fsm:send_event(Game, {licit, Joe, [passz]}),
+    {wait_for_licit, State1} = ulti_game_fsm:get_state(Game),
+    
+    2 = element(3, State1),
+    {1, [passz]} = element(4, State1),
 
-%% Results in a proplist like
-%%     [{"StateName", wait_for_connect}, "Status", running}]
-get_fsm_state(Pid) ->
-    {status, _, _, Items} = sys:get_status(Pid),
-    lists:foldl(
-        fun(E, Acc) when is_list(E) ->
-            case proplists:get_value(data, E) of
-                undefined ->
-                    Acc;
-                Value when is_list(Value) ->
-                    Value ++ Acc;
-                Value ->
-                    [Value | Acc]
-            end;
-           (E, Acc) ->
-               Acc
-        end, [], Items).
+    gen_fsm:send_event(Game, {licit, Jack, [passz]}),
+    {wait_for_licit, State2} = ulti_game_fsm:get_state(Game),
+    
+    3 = element(3, State2),
+    {1, [passz]} = element(4, State2).
+    
+%%%============================================================================
+%%% Internal helper functions
+%%%============================================================================
 
-got_message(Pid, Message) ->
+got_message(Pid, Message, Fun) ->
+    Pid ! {callback, {self(), Message}},
+    Fun(),
     receive
-        {Pid, Message} ->
+        Message ->
             ct:pal("~p got ~p", [Pid, Message]),
-            true;
-        E ->
-            ct:fail("~p has got ~p (expected ~p)",
-                [Pid, E, Message])
+            true
     after 5000 ->
             ct:fail("~p timeout during waiting for ~p", [Pid, Message])
     end.
 
-player(TestProcess) ->
+player(Callback) ->
     receive
+        {callback, NewCallback} ->
+            player(NewCallback);
         Message ->
             ct:pal("Player ~p got ~p", [self(), Message]),
-            TestProcess ! {self(), Message},
-            player(TestProcess)
+            case Callback of
+                undefined ->
+                    player(undefined);
+                {Pid, Message} ->
+                    Pid ! Message,
+                    player(undefined);
+                _ ->
+                    player(Callback)
+            end
     end.
