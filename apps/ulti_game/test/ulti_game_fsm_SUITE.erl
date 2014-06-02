@@ -44,19 +44,24 @@ licit(Config) ->
 
     gen_fsm:send_event(Game, {licit, Joe, [passz]}),
     {wait_for_licit, State1} = ulti_game_fsm:get_state(Game),
-    
-    2 = element(3, State1),
-    {1, [passz]} = element(4, State1),
+   
+    {_, _, 2, {1, [passz]}} = State1,
+    got_message(Jill, {licit, "Joe", [passz]}),
+    got_message(Jack, {licit, "Joe", [passz]}),
 
     gen_fsm:send_event(Game, {licit, Jack, [passz]}),
     {wait_for_licit, State2} = ulti_game_fsm:get_state(Game),
-    
-    3 = element(3, State2),
-    {1, [passz]} = element(4, State2).
+
+    {_, _, 3, {1, [passz]}} = State2,
+    got_message(Jill, {licit, "Jack", skipped}),
+    got_message(Joe, {licit, "Jack", skipped}).
     
 %%%============================================================================
 %%% Internal helper functions
 %%%============================================================================
+
+got_message(Pid, Message) ->
+    got_message(Pid, Message, fun() -> ok end).
 
 got_message(Pid, Message, Fun) ->
     Pid ! {callback, {self(), Message}},
